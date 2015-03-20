@@ -1,0 +1,5 @@
+TODO automatizzare.
+L'output di 
+python prova3.py inex2005.trainingset.500 0.4
+deve essere identico a quello di
+python test_sst_inex.py 0.4 1 a

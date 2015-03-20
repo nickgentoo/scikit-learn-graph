@@ -1,0 +1,7 @@
+-Add message for missing package when importing networkx as:
+    try:
+        import pygraphviz
+    except ImportError:
+        raise ImportError('requires pygraphviz ',
+                          'http://networkx.lanl.gov/pygraphviz ',
+                          '(not available for Python3)')

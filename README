@@ -1,0 +1,5 @@
+To execute the two exampleson the bursi dataset:
+    
+    python ODDKernel_example.py datasets/bursi.gspan datasets/bursi.target 
+
+    python NSPDKernel_example.py datasets/bursi.gspan datasets/bursi.target 

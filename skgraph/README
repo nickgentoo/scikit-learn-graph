@@ -1,0 +1,7 @@
+ 
+SOFTWARE REQUIREMENTS
+This package requires networkx to be installed. You can find it in the package manager of many distributions, e.g. in ubuntu type in a shell:
+sudo apt-get install python-networkx
+
+It requires pyEDeN and scikit-learn to be installed in the same directory.
+
