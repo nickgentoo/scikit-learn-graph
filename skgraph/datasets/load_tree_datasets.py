@@ -86,9 +86,10 @@ class dataset_tree():
             self.target = []
             #f = open(filename,"r")
             for line in f:
-                ex,target=self.TreeFromPrologString(line)
-                self.trees.append(ex)
-                self.target.append(target)
+                if line.strip():
+                    ex,target=self.TreeFromPrologString(line)
+                    self.trees.append(ex)
+                    self.target.append(target)
 
             f.close()
     
