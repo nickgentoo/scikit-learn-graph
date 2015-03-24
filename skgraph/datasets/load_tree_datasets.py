@@ -72,6 +72,9 @@ class dataset_tree():
                 f = requests.get(name).text.split('\n')
          #self.loadFromFile('datasets/inex2005.trainingset.500')
          self.loadFromFile(f)
+         if input_type is 'file':
+                f.close()
+
 
     
     
@@ -91,7 +94,6 @@ class dataset_tree():
                     self.trees.append(ex)
                     self.target.append(target)
 
-            f.close()
     
             
      def loadExample(self, line):
