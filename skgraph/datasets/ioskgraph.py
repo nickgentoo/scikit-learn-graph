@@ -1,11 +1,25 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec  5 15:42:13 2014
+Created on Fri Mar 13 13:02:41 2015
 
-@author: Nicolò Navarin
-    This file is an encapsulatorr. It defines the functions for the input/output of labels
-    (arrays) and matrices
-    In the current version it uses pyEDeN functions.  
+This file is from Fabrizio Costa's EDeN.
+
+Copyright 2015 Nicolo' Navarin
+
+This file is part of scikit-learn-graph.
+
+scikit-learn-graph is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+scikit-learn-graph is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 import requests
 import numpy as np

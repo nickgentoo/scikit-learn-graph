@@ -41,6 +41,27 @@ def convert_to_sparse_matrix(km):
         X = csr_matrix( (data,(row,col)), shape = (ne, ne))
 
         return X
+def load_graphs_GDD():
+    """Load the GDD graph dataset for graph classification..
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/GDD/GDD_labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/GDD/graphs.gspan'
+    _target=load_target(input_target_url)
+    g_it=instance_to_graph(input = input_data_url)
+    gra=[i for i in g_it]
+    print 'Loaded GDD graph dataset for graph classification.'
+    print len(gra),'graphs.'    
+    return Bunch(graphs=gra,
+    target=_target,
+    labels=True,
+    veclabels=False)
 
 def load_graphs_MUTAG():
     """Load the MUTAG graph dataset for graph classification..
