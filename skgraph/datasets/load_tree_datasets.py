@@ -49,7 +49,7 @@ def load_trees_inex2005_train():
         'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
         sample.
     """
-    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/inex2005.train.svmlight.prolog'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/inex2005_train.svmlight.prolog'
     #input_target_url='datasets/ENZYMES.labels'  
     #input_data_url='datasets/ENZYMES.gspan'
     dat=dataset_tree(input_data_url,input_type='url')
@@ -84,7 +84,7 @@ class dataset_tree():
              : Parameter
             filename: the name of the file containing the set of strings in prolog format
             """
-            #self.filename = filename
+            #self.filename = filenamepython -m skgraph/Unity_tests/load_tree_dataset
             self.trees = []
             self.target = []
             #f = open(filename,"r")
