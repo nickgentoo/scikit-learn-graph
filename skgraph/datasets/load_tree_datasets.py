@@ -1,9 +1,44 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 30 17:13:51 2015
+Created on Fri Mar 13 13:02:41 2015
 
-@author: nick
+Copyright 2015 Nicolo' Navarin
+
+This file is part of scikit-learn-graph.
+
+scikit-learn-graph is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+scikit-learn-graph is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
+
+def load_trees_CAvsCM():
+    """
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/TREE/CAvsCM.prolog'
+    #input_target_url='datasets/ENZYMES.labels'  
+    #input_data_url='datasets/ENZYMES.gspan'
+    dat=dataset_tree(input_data_url,input_type='url')
+    print 'Loaded CAvsCM tree dataset for graph classification.'
+    print len(dat.trees),'trees.'
+    from sklearn.datasets.base import Bunch
+    return Bunch(graphs=[i for i in dat.trees],
+    target=dat.target)
 def load_trees_inex2005_train():
     """
 
@@ -18,10 +53,11 @@ def load_trees_inex2005_train():
     #input_target_url='datasets/ENZYMES.labels'  
     #input_data_url='datasets/ENZYMES.gspan'
     dat=dataset_tree(input_data_url,input_type='url')
-    
+    print 'Loaded INEX2005 train dataset for graph classification.'
+    print len(dat.trees),'trees.'
     from sklearn.datasets.base import Bunch
-    return Bunch(graphs=[i for i in g_it],
-    target=_target)
+    return Bunch(graphs=[i for i in dat.trees],
+    target=dat.target)
 
 
 class dataset_tree():
@@ -47,6 +83,7 @@ class dataset_tree():
             """
             #self.filename = filename
             self.trees = []
+            self.target = []
             #f = open(filename,"r")
             for line in f:
                 ex,target=self.TreeFromPrologString(line)
