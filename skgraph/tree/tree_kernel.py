@@ -54,24 +54,24 @@ class TreeKernel:
         return Gram
         
         def computeKernelMatrix(self,Graphs1, Graphs2):
-        #TODO implementare
-        print "Computing gram matrix"
-#        Gram = np.empty(shape=(len(Graphs),len(Graphs)))
-#        progress=0
-#        for  i in xrange(0,len(Graphs)):
-#            for  j in xrange(i,len(Graphs)):
-#                #print "COMPUTING GRAPHS",i,j
-#                progress+=1
-#                Gram[i][j]=self.kernel(Graphs[i],Graphs[j])
-#                Gram[j][i]=Gram[i][j]
-#                if progress % 1000 ==0:
-#                    print "k",
-#                    sys.stdout.flush()
-#                elif progress % 100 ==0:
-#                    print ".",
-#                    sys.stdout.flush()
-#    
-#        return Gram
+            #TODO implementare
+            print "Computing gram matrix"
+    #        Gram = np.empty(shape=(len(Graphs),len(Graphs)))
+    #        progress=0
+    #        for  i in xrange(0,len(Graphs)):
+    #            for  j in xrange(i,len(Graphs)):
+    #                #print "COMPUTING GRAPHS",i,j
+    #                progress+=1
+    #                Gram[i][j]=self.kernel(Graphs[i],Graphs[j])
+    #                Gram[j][i]=Gram[i][j]
+    #                if progress % 1000 ==0:
+    #                    print "k",
+    #                    sys.stdout.flush()
+    #                elif progress % 100 ==0:
+    #                    print ".",
+    #                    sys.stdout.flush()
+    #    
+    #        return Gram
     
     def computeKernelMatrixTrainParallel(self,Graphs,njobs=-1):
         """
