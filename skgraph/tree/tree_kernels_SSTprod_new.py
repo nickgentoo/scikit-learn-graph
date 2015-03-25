@@ -1,9 +1,12 @@
 #from .... import graph
-from skgraph import graph
 from scipy.spatial.distance import pdist
 import numpy as np
 import sys
 from numpy.linalg import norm
+from tree_kernel import TreeKernel
+from copy import deepcopy
+import math
+
 def gaussianKernel(X,Y,beta):
     Z=[X,Y]
     return np.exp(-beta * pdist(Z, 'sqeuclidean'))
@@ -15,12 +18,12 @@ def linearKernel(X,Y):
     return np.dot(Xnum,Ynum)
 
 
-class SSTprodKernel:
-    def __init__(self,l,hashsep="#",labels=True,veclabels=False,order="gaussian"):
-        self.order=order      
+class SSTprodKernel(TreeKernel):
+    def __init__(self,l,hashsep="#",labels=True,veclabels=False,normalize=True):
+        self.normalize=normalize
         self.l = float(l)
         self.hashsep = hashsep
-        self.cache = Cache()
+        self.cache = {}
         self.labels=labels
         self.veclabels=veclabels
 
@@ -35,7 +38,10 @@ class SSTprodKernel:
 
         T.graph['kernelsstrepr']=ProdSubtreeList(T,T.graph['root'],labels=self.labels)
         T.graph['kernelsstrepr'].sort()
-
+        if self.normalize:
+            T.graph['norm'] = 1.0
+            b = deepcopy(T)
+            T.graph['norm'] = math.sqrt(self.evaluate(T,b))
 
 
     def evaluate(self,a,b):
@@ -46,7 +52,7 @@ class SSTprodKernel:
 #        print "PA"
 #        for i in range(len(pa)):
 #            print pa.getProduction(i),
-        self.cache.removeAll()
+        self.cache.clear()
         i,j,k,toti,totj = (0,0,0,len(pa),len(pb))
         while i < toti and j < totj:
             if pa.getProduction(i) == pb.getProduction(j):
@@ -61,6 +67,8 @@ class SSTprodKernel:
                 i += 1
             else:
                 j += 1
+        if self.normalize:
+          k = k/(a.graph['norm']*b.graph['norm'])
         return k     
         
     def kernel(self, a, b):
@@ -130,8 +138,8 @@ class SSTprodKernel:
         #ASSUME THAT C AND D HAVE THE SAME LABEL
         #c and d are node indices
         tmpkey = str(c) + "#" + str(d)
-        if self.cache.exists(tmpkey):
-            return float(self.cache.read(tmpkey))
+        if tmpkey in self.cache:
+            return float(self.cache[tmpkey])
         else:
             prod = self.l
             #print G1.node[c]
@@ -153,9 +161,9 @@ class SSTprodKernel:
                     else:
                         #print G1.node[children1[ci]]['subtreeID']
                         cid, did = (children1[ci],children2[ci])
-                        self.cache.insert(str(cid) +"#"+ str(did), 0)
+                        self.cache[str(cid) +"#"+ str(did)] = 0
 
-            self.cache.insert(tmpkey, prod)
+            self.cache[tmpkey] = prod
         return float(prod)
 
 #    def evaluate(self,a,b):
@@ -180,64 +188,10 @@ class SSTprodKernel:
     def __str__(self):
         return "Subset Tree Kernel, with lambda=" + self.l
         
-    def computeKernelMatrix(self,Graphs):
-        #TODO
-        print "Computing gram matrix"
-        Gram = np.empty(shape=(len(Graphs),len(Graphs)))
-        progress=0
-        for  i in xrange(0,len(Graphs)):
-            for  j in xrange(i,len(Graphs)):
-                #print "COMPUTING GRAPHS",i,j
-                progress+=1
-                Gram[i][j]=self.kernel(Graphs[i],Graphs[j])
-                Gram[j][i]=Gram[i][j]
-                if progress % 1000 ==0:
-                    print "k",
-                    sys.stdout.flush()
-                elif progress % 100 ==0:
-                    print ".",
-                    sys.stdout.flush()
-    
-        return Gram
+
         
         
-class Cache():
-    """
-    An extremely simple cache 
-    """
 
-    def __init__(self):
-        self.cache = {} 
-
-    def exists(self,key):
-        return key in self.cache
-
-    def existsPair(self,keya,keyb):
-        if keya < keyb:
-            tmpkey = str(keya) + "#" + str(keyb)
-        else:
-            tmpkey = str(keyb) + "#" + str(keya) 
-        return tmpkey in self.cache
-
-    def insert(self,key,value):
-        self.cache[key] = value
-
-    def insertPairIfNew(self,keya,keyb):
-        if keya < keyb:
-            tmpkey = str(keya) + "#" + str(keyb)
-        else:
-            tmpkey = str(keyb) + "#" + str(keya) 
-        if not tmpkey in self.cache:
-            self.insert(tmpkey)
-
-    def remove(self,key):
-        del self.cache[key]
-
-    def removeAll(self):
-        self.cache = {}
-
-    def read(self,key):
-        return self.cache[key]
 
 #class SSTKernelOrdered(SSTKernel):
 #
