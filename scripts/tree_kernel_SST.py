@@ -12,7 +12,7 @@ g_it=load_tree_datasets.load_trees_CAvsCM()
 
 SSTkernel=SSTprodKernel(l=la)
 
-GM=SSTkernel.computeKernelMatrixTrain([g_it.graphs[i] for i in range(21)]) #Parallel ,njobs
+GM=SSTkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
 GMsvm=[]
 for i in range(len(GM)):
     GMsvm.append([])
@@ -21,7 +21,7 @@ for i in range(len(GM)):
 from sklearn import datasets
 print "Saving Gram matrix"
 #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
-datasets.dump_svmlight_file(GMsvm,[g_it.target[i] for i in range(21)], name+".svmlight")
+datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
 #print GM
 
 
