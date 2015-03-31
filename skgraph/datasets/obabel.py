@@ -56,7 +56,9 @@ def obabel_to_networkx( mol ):
     g = nx.Graph()
     #atoms
     for atom in mol:
-        label = str(atom.type)
+        #label = str(atom.type)
+        label = str(atom.atomicnum)
+
         g.add_node(atom.idx, label=label)
     #bonds
         edges = []
