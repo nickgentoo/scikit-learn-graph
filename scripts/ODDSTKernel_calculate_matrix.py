@@ -55,7 +55,7 @@ if __name__=='__main__':
 
 
     ODDkernel=ODDSTGraphKernel(r=max_radius,l=la)
-    GM=ODDkernel.computeKernelMatrixTrain([g_it.graphs[i] for i in range(21)]) #Parallel ,njobs
+    GM=ODDkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
     GMsvm=[]    
     for i in range(len(GM)):
         GMsvm.append([])
@@ -64,5 +64,5 @@ if __name__=='__main__':
     from sklearn import datasets
     print "Saving Gram matrix"
     #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
-    datasets.dump_svmlight_file(GMsvm,[g_it.target[i] for i in range(21)], name+".svmlight")
+    datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
     #print GM
