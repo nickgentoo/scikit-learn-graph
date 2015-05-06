@@ -54,12 +54,14 @@ def obabel_to_networkx( mol ):
     Takes a pybel molecule object and converts it into a networkx graph.
     """
     g = nx.Graph()
+    g.graph['ordered']=False
+
     #atoms
     for atom in mol:
         #label = str(atom.type)
         label = str(atom.atomicnum)
 
-        g.add_node(atom.idx, label=label)
+        g.add_node(atom.idx, label=label, viewpoint=True)
     #bonds
         edges = []
     bondorders = []
