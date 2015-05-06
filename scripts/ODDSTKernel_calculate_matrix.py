@@ -21,18 +21,21 @@ along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 import sys
 from skgraph.kernel.ODDSTGraphKernel import ODDSTGraphKernel
+from skgraph.kernel.ODDSTOrthogonalizedGraphKernel import ODDSTOrthogonalizedGraphKernel
+
 from skgraph.datasets import load_graph_datasets
 
 
 if __name__=='__main__':
     if len(sys.argv)<1:
-        sys.exit("python ODDKernel_example.py dataset r l filename")
+        sys.exit("python ODDKernel_example.py dataset r l filename kernel")
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
     #hashs=int(sys.argv[3])
     njobs=1
     name=str(sys.argv[4])
+    kernel=sys.argv[5]
     
     if dataset=="CAS":
         print "Loading bursi(CAS) dataset"        
@@ -53,9 +56,12 @@ if __name__=='__main__':
         print "Unknown dataset name"
      
 
-
-    ODDkernel=ODDSTGraphKernel(r=max_radius,l=la)
-    GM=ODDkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
+    if kernel=="ST":
+        ODDkernel=ODDSTGraphKernel(r=max_radius,l=la)
+    elif kernel=="STOrthogonalized":
+        ODDkernel=ODDSTOrthogonalizedGraphKernel(r=max_radius,l=la)
+       
+        GM=ODDkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
     GMsvm=[]    
     for i in range(len(GM)):
         GMsvm.append([])
