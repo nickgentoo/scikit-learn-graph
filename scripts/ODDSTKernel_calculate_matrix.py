@@ -61,9 +61,9 @@ if __name__=='__main__':
     elif kernel=="STOrthogonalized":
         ODDkernel=ODDSTOrthogonalizedGraphKernel(r=max_radius,l=la)
        
-        GM=ODDkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
+    GM=ODDkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
     GMsvm=[]    
-    for i in range(len(GM)):
+    for i in xrange(len(GM)):
         GMsvm.append([])
         GMsvm[i]=[i+1]
         GMsvm[i].extend(GM[i])
