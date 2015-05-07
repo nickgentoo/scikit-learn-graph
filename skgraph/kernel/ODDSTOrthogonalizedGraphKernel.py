@@ -198,23 +198,26 @@ class ODDSTOrthogonalizedGraphKernel(GraphKernel):
     def computeGram(self,X):
         """
         Public static method to compute the Gram matrix
-        @type X: scipy.sparse.csr_matrix
-        @param X: The instance-features matrix
+        @type X: list of scipy.sparse.csr_matrix
+        @param X: The instance-features matrix indexed by height
         
         @rtype: numpy matrix
         @return: the Gram matrix
         """
-        col=X.indices
-        col=self.__shrink(col) #needed to __shrink because if not can cause memory buffer overflow due to dot product implementation
-        data=X.data
-        row=[]
-        v=0
-        for i in range(1,X.indptr.shape[0]):
-            for j in range(X.indptr[i]-X.indptr[i-1]):
-                row.append(v)
-            v+=1
-        X=csr_matrix((data,(row,col)))
-        return X.dot(X.T).todense()
+        matrices=[]
+        for mat in xrange(len(X)):
+            col=X[mat].indices
+            col=self.__shrink(col) #needed to __shrink because if not can cause memory buffer overflow due to dot product implementation
+            data=X[mat].data
+            row=[]
+            v=0
+            for i in range(1,X[mat].indptr.shape[0]):
+                for j in range(X[mat].indptr[i]-X[mat].indptr[i-1]):
+                    row.append(v)
+                v+=1
+            X[mat]=csr_matrix((data,(row,col)))
+            matrices.append(X[mat].dot(X[mat].T).todense().tolist())
+        return matrices
         
     def computeKernelMatrixTest(self,Graphs1,Graphs2):
         """
@@ -240,7 +243,7 @@ class ODDSTOrthogonalizedGraphKernel(GraphKernel):
         @return: the Gram matrix
         """
         X=self.transform(Graphs)
-        return self.computeGram(X).tolist()
+        return self.computeGram(X)
 
     @staticmethod
     def __shrink(col):
@@ -322,9 +325,13 @@ class ODDSTOrthogonalizedGraphKernel(GraphKernel):
         @rtype: Dictionary
         @return: The normalized feature vector
         """
-        feature_list = defaultdict(lambda : defaultdict(float))
-        feature_list.update({(instance_id,k):v for (k,v) in self.getFeatures(G_orig).items()})
-        return self.__normalization(feature_list)
+        feature_list_depth=[]
+        featuresAtDepth=self.getFeaturesDepth(G_orig)
+        for i in xrange(len(featuresAtDepth)):
+            feature_list_depth.append(defaultdict(lambda : defaultdict(float)))
+            feature_list_depth[i].update({(instance_id,k):v for (k,v) in featuresAtDepth[i].items()})
+            self.__normalization(feature_list_depth[i])
+        return feature_list_depth
         
     def __transform_serial(self, G_list):
         """
@@ -335,11 +342,14 @@ class ODDSTOrthogonalizedGraphKernel(GraphKernel):
         @rtype: scipy.sparse.csr_matrix
         @return: the instance-features matrix
         """
-        feature_dict={}
+        feature_dict_list=[{} for i in xrange(self.max_radius+1)]
         for instance_id , G in enumerate( G_list ):
-            
-            feature_dict.update(self.__transform( instance_id, G ))
-        return self.__convert_to_sparse_matrix( feature_dict )
+            features=self.__transform( instance_id, G )
+            for mat in xrange(len(features)):
+                #print mat
+                feature_dict_list[mat].update(features[mat])
+        feature_dict_matrix=[self.__convert_to_sparse_matrix( feature_dict_list[i]) for i in xrange(len(feature_dict_list))]
+        return feature_dict_matrix
     
     def transform(self, G_list, n_jobs = 1):
         """
@@ -355,7 +365,7 @@ class ODDSTOrthogonalizedGraphKernel(GraphKernel):
         """
         return self.__transform_serial(G_list)
     
-    def getFeatures(self,G,nohash=False):
+    def getFeaturesDepth(self,G,nohash=False):
         """
         Public method that given a networkx graph G will create the dictionary representing its features according to the ST Kernel
         @type G: networkx graph
@@ -364,7 +374,7 @@ class ODDSTOrthogonalizedGraphKernel(GraphKernel):
         @rtype: dictionary
         @return: the encoding-feature dictionary
         """
-        Dict_features={}
+        Dict_features=[{} for i in xrange(self.max_radius+1)]
         for v in G.nodes():
             if G.node[v]['viewpoint']:
                 if not G.graph['ordered']:
@@ -405,12 +415,11 @@ class ODDSTOrthogonalizedGraphKernel(GraphKernel):
                             if max_child_height==0:
                                 frequency=maxLevel - DAG.node[u]['depth']
                             #Modified code----------------------
-                            if depth==self.max_radius:
-                                if Dict_features.get(enc) is None:
-                                    Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
-                                else:
-                                    Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
-                            
+                            if Dict_features[depth].get(enc) is None:
+                                Dict_features[depth][enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
+                            else:
+                                Dict_features[depth][enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+                        
                             MapNodetoFrequencies[u].append(frequency)
                             MapProductionIDtoSize[enc]=1
                         else:
@@ -452,11 +461,10 @@ class ODDSTOrthogonalizedGraphKernel(GraphKernel):
                             
                             frequency = min_freq_children
                             MapNodetoFrequencies[u].append(frequency)
-                            if depth==self.max_radius:     
-                                if Dict_features.get(hash_subgraph_code) is None:
-                                    Dict_features[hash_subgraph_code]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                                else:
-                                    Dict_features[hash_subgraph_code]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            if Dict_features[depth].get(hash_subgraph_code) is None:
+                                Dict_features[depth][hash_subgraph_code]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            else:
+                                Dict_features[depth][hash_subgraph_code]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
         return Dict_features
         
     def kernelFunction(self,Graph1, Graph2):
