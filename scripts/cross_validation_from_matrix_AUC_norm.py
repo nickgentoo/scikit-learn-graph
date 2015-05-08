@@ -1,9 +1,9 @@
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '',''))
 import numpy as np
-from skgraph import datasets
+#from skgraph import datasets
 from sklearn import svm
-from skgraph.ioskgraph import *
+#from skgraph.ioskgraph import *
 from math import sqrt
 import sys
 from sklearn.metrics import roc_auc_score
