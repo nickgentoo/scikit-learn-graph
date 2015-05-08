@@ -23,7 +23,7 @@ kmgood=km[:,1:].todense()
 gram=km[:,1:].todense()
 for i in xrange(len(target_array)):
     for j in xrange(0,len(target_array)):
-        print i,j,kmgood[i,j],kmgood[i,i],kmgood[j,j]
+        #print i,j,kmgood[i,j],kmgood[i,i],kmgood[j,j]
         gram[i,j]=kmgood[i,j]/sqrt(kmgood[i,i]*kmgood[j,j])
 #print gram
 from sklearn import cross_validation
