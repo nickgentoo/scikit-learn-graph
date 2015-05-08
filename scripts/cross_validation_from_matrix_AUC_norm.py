@@ -23,7 +23,7 @@ kmgood=km[:,1:].todense()
 gram=km[:,1:].todense()
 for i in xrange(len(target_array)):
     for j in xrange(0,len(target_array)):
-        #print i,j,kmgood[i,j],kmgood[i,i],kmgood[j,j]
+        #AUC cross validationprint i,j,kmgood[i,j],kmgood[i,i],kmgood[j,j]
         gram[i,j]=kmgood[i,j]/sqrt(kmgood[i,i]*kmgood[j,j])
 #print gram
 from sklearn import cross_validation
@@ -41,7 +41,6 @@ for rs in range(42,53):
     f.write("CV\t test_AUROC\n")
     #print gram
     # normalization
-    from math import sqrt
     #for i in range(len(gram)):
     #    for j in range(len(gram)):
     #        gram[i,j]=gram[i,j]/sqrt(gram[i,i]+gram[j,j])
@@ -53,7 +52,7 @@ for rs in range(42,53):
         #generated train and test lists, incuding indices of the examples in training/test
         #for the specific fold. Indices starts from 0 now
         
-        clf = svm.SVC(C=c, kernel='precomputed')
+        clf = svm.SVC(C=c, kernel='precomputed',probability=True)
         train_gram = [] #[[] for x in xrange(0,len(train))]
         test_gram = []# [[] for x in xrange(0,len(test))]
           
@@ -83,9 +82,10 @@ for rs in range(42,53):
         clf.fit(X_train, y_train)
     
         # predict on test examples
-        y_test_predicted=clf.predict(X_test)
-        sc.append(roc_auc_score(y_test, y_test_predicted))
-        f.write(str(roc_auc_score(y_test, y_test_predicted))+"\n")
+        y_test_predicted=clf.predict_proba(X_test)
+        #print y_test_predicted
+        sc.append(roc_auc_score(y_test, y_test_predicted[:,1]))
+        f.write(str(roc_auc_score(y_test, y_test_predicted[:,1]))+"\n")
 
     f.close()
 scores=np.array(sc)
