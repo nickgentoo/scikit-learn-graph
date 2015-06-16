@@ -73,7 +73,7 @@ class ODDSTRandomSplitGraphKernel(GraphKernel):
         @param show: If true shows graphs and DAGs during computation
         """
         self.rs=rs
-        self.featureHasher=split_hash_function(self.rs,r)
+        self.featureHasher=split_hash_function(self.rs,r+1)
         
         self.Lambda = l
         self.max_radius = r
