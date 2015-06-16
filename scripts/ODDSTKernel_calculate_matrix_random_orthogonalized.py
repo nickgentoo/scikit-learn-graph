@@ -63,7 +63,7 @@ if __name__=='__main__':
         ODDkernel=ODDSTGraphKernel(r=max_radius,l=la)
     elif kernel=="STOrthogonalized":
         ODDkernel=ODDSTOrthogonalizedGraphKernel(r=max_radius,l=la)
-    elif kernel=="STRandomSplitGraphKernel":
+    elif kernel=="STRandomSplit":
         ODDkernel=ODDSTRandomSplitGraphKernel(r=max_radius,l=1,rs=la)
        
     GM_list=ODDkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
