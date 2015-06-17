@@ -33,8 +33,10 @@ from collections import defaultdict
 import sys
 
 #HASH FUNCTION FOR random splitting features
-import random
 
+#hashed=[{},{}]
+import random
+#import binascii
 _memomask = {}
 
 def split_hash_function(n,s):
@@ -44,7 +46,12 @@ def split_hash_function(n,s):
     random.seed(n)
     mask = _memomask[n] = random.getrandbits(64)
   def myhash(x):
-    return (hash(x) ^ mask) % splits
+    #print x
+    #print  (hash(x) )
+    #print (hash(x) ^ mask) % n
+    #hashed[hash(str(hash(x) ^ mask)) % splits][x]=1
+    #print (hash(x) ^ mask) / BUCKETSIZE #^ mask
+    return hash(str(hash(x) ^ mask)) % splits
   return myhash
 
 
@@ -436,10 +443,10 @@ class ODDSTRandomSplitGraphKernel(GraphKernel):
                             if max_child_height==0:
                                 frequency=maxLevel - DAG.node[u]['depth']
                             #Modified code----------------------
-                            if Dict_features[self.featureHasher(enc)].get(enc) is None:
-                                Dict_features[self.featureHasher(enc)][enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
+                            if Dict_features[self.featureHasher(DAG.node[u]['label'])].get(enc) is None:
+                                Dict_features[self.featureHasher(DAG.node[u]['label'])][enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
                             else:
-                                Dict_features[self.featureHasher(enc)][enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+                                Dict_features[self.featureHasher(DAG.node[u]['label'])][enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
                         
                             MapNodetoFrequencies[u].append(frequency)
                             MapProductionIDtoSize[enc]=1
@@ -482,10 +489,12 @@ class ODDSTRandomSplitGraphKernel(GraphKernel):
                             
                             frequency = min_freq_children
                             MapNodetoFrequencies[u].append(frequency)
-                            if Dict_features[self.featureHasher(hash_subgraph_code)].get(hash_subgraph_code) is None:
-                                Dict_features[self.featureHasher(hash_subgraph_code)][hash_subgraph_code]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            if Dict_features[self.featureHasher(encoding)].get(hash_subgraph_code) is None:
+                                Dict_features[self.featureHasher(encoding)][hash_subgraph_code]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
                             else:
-                                Dict_features[self.featureHasher(hash_subgraph_code)][hash_subgraph_code]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                                Dict_features[self.featureHasher(encoding)][hash_subgraph_code]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+        
+        #print "0:",len(hashed[0]),"1:",len(hashed[1])        
         return Dict_features
         
     def kernelFunction(self,Graph1, Graph2):
