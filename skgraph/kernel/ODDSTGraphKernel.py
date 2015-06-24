@@ -357,66 +357,71 @@ class ODDSTGraphKernel(GraphKernel):
         """
         Dict_features={}
         for v in G.nodes():
-            DAG=generateDAG(G, v, self.max_radius)[0]
+            if G.node[v]['viewpoint']:
+                if not G.graph['ordered']:
+                    (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
+                    orderDAGvertices(DAG)
+                else:
+                    (DAG,maxLevel)=generateDAGOrdered(G, v, self.max_radius)
             
-            if self.show:
-                drawGraph(DAG,v)
-                
-            MapNodeToProductionsID={}
-            MapNodeToProductionsIDInd={}
-            for u in DAG.nodes():
-                MapNodeToProductionsID[u]=[]
-                MapNodeToProductionsIDInd[u]=[]
-    
-            for u in nx.topological_sort(DAG)[::-1]:
-                max_child_height=0
-                for child in DAG.successors(u):
-                    child_height=len(MapNodeToProductionsID.get(child))
+                if self.show:
+                    drawGraph(DAG,v)
                     
-                    if child_height > max_child_height:
-                        max_child_height = child_height
+                MapNodeToProductionsID={}
+                MapNodeToProductionsIDInd={}
+                for u in DAG.nodes():
+                    MapNodeToProductionsID[u]=[]
+                    MapNodeToProductionsIDInd[u]=[]
+        
+                for u in nx.topological_sort(DAG)[::-1]:
+                    max_child_height=0
+                    for child in DAG.successors(u):
+                        child_height=len(MapNodeToProductionsID.get(child))
                         
-                for depth in range(max_child_height+1):
-                    if depth==0:
-                        enc=DAG.node[u]['label']
-                        encind=str(u)
-                        
-                        MapNodeToProductionsID[u].append(enc)
-                        MapNodeToProductionsIDInd[u].append(encind)
-                        
-                        if Dict_features.get(enc) is None:
-                            Dict_features[enc]=encind
-                        
-                    else:
-                        encoding=DAG.node[u]['label']
-                        encodingind=str(u)
-                        
-                        vertex_label_id_list=[]
-                        
-                        for child in DAG.successors(u):
-                            size_map=len(MapNodeToProductionsID[child])
-                            child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
-                            child_hashind=MapNodeToProductionsIDInd[child][min(size_map,depth)-1]
+                        if child_height > max_child_height:
+                            max_child_height = child_height
                             
-                            vertex_label_id_list.append((child_hash,child_hashind))
-
-                        
-                        vertex_label_id_list.sort(key=itemgetter(0))
-                        encoding+=self.__startsymbol+vertex_label_id_list[0][0]
-                        encodingind+=self.__startsymbol+vertex_label_id_list[0][1]
-                        
-                        for i in range(1,len(vertex_label_id_list)):
-                            encoding+=self.__conjsymbol+vertex_label_id_list[i][0]
-                            encodingind+=self.__conjsymbol+vertex_label_id_list[i][1]
-                        
-                        encoding+=self.__endsymbol
-                        encodingind+=self.__endsymbol
-                        
-                        MapNodeToProductionsID[u].append(encoding)
-                        MapNodeToProductionsIDInd[u].append(encodingind)
-                        
-                        if Dict_features.get(encoding) is None:
-                            Dict_features[encoding]=encodingind
+                    for depth in range(max_child_height+1):
+                        if depth==0:
+                            enc=DAG.node[u]['label']
+                            encind=str(u)
+                            
+                            MapNodeToProductionsID[u].append(enc)
+                            MapNodeToProductionsIDInd[u].append(encind)
+                            
+                            if Dict_features.get(enc) is None:
+                                Dict_features[enc]=encind
+                            
+                        else:
+                            encoding=DAG.node[u]['label']
+                            encodingind=str(u)
+                            
+                            vertex_label_id_list=[]
+                            
+                            for child in DAG.successors(u):
+                                size_map=len(MapNodeToProductionsID[child])
+                                child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
+                                child_hashind=MapNodeToProductionsIDInd[child][min(size_map,depth)-1]
+                                
+                                vertex_label_id_list.append((child_hash,child_hashind))
+    
+                            
+                            vertex_label_id_list.sort(key=itemgetter(0))
+                            encoding+=self.__startsymbol+vertex_label_id_list[0][0]
+                            encodingind+=self.__startsymbol+vertex_label_id_list[0][1]
+                            
+                            for i in range(1,len(vertex_label_id_list)):
+                                encoding+=self.__conjsymbol+vertex_label_id_list[i][0]
+                                encodingind+=self.__conjsymbol+vertex_label_id_list[i][1]
+                            
+                            encoding+=self.__endsymbol
+                            encodingind+=self.__endsymbol
+                            
+                            MapNodeToProductionsID[u].append(encoding)
+                            MapNodeToProductionsIDInd[u].append(encodingind)
+                            
+                            if Dict_features.get(encoding) is None:
+                                Dict_features[encoding]=encodingind
                         
         return Dict_features
     
@@ -545,88 +550,93 @@ class ODDSTGraphKernel(GraphKernel):
         """
         Dict_features={}
         for v in G.nodes():
-            (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
+            if G.node[v]['viewpoint']:
+                if not G.graph['ordered']:
+                    (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
+                    orderDAGvertices(DAG)
+                else:
+                    (DAG,maxLevel)=generateDAGOrdered(G, v, self.max_radius)
             
-            if self.show:
-                drawGraph(DAG,v)
-                
-            MapNodeToProductionsID={} #k:list(unsigned)
-            MapNodetoFrequencies={} #k:list(int)
-            for u in DAG.nodes():
-                MapNodeToProductionsID[u]=[]
-                MapNodetoFrequencies[u]=[]
-            MapProductionIDtoSize={} #k:int
-    
-            for u in nx.topological_sort(DAG)[::-1]:
-                max_child_height=0
-                for child in DAG.successors(u):
-                    child_height=len(MapNodeToProductionsID.get(child))
+                if self.show:
+                    drawGraph(DAG,v)
                     
-                    if child_height > max_child_height:
-                        max_child_height = child_height
+                MapNodeToProductionsID={} #k:list(unsigned)
+                MapNodetoFrequencies={} #k:list(int)
+                for u in DAG.nodes():
+                    MapNodeToProductionsID[u]=[]
+                    MapNodetoFrequencies[u]=[]
+                MapProductionIDtoSize={} #k:int
+        
+                for u in nx.topological_sort(DAG)[::-1]:
+                    max_child_height=0
+                    for child in DAG.successors(u):
+                        child_height=len(MapNodeToProductionsID.get(child))
                         
-                for depth in range(max_child_height+1):
-                    if depth==0:
-                        enc=hash(DAG.node[u]['label'])
-                        
-                        MapNodeToProductionsID[u].append(enc)
-                        
-                        frequency=0
-                        if max_child_height==0:
-                            frequency=maxLevel - DAG.node[u]['depth']
-                        
-                        if Dict_features.get(enc) is None:
-                            Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
-                        else:
-                            Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
-                        
-                        if not MapEncToId is None:
-                            MapEncToId.addElement(enc)
-                        
-                        MapNodetoFrequencies[u].append(frequency)
-                        MapProductionIDtoSize[enc]=1
-                    else:
-                        size=0
-                        encoding=DAG.node[u]['label']
-                        
-                        vertex_label_id_list=[]#list[string]
-                        min_freq_children=sys.maxint
-                        
-                        for child in DAG.successors(u):
-                            size_map=len(MapNodeToProductionsID[child])
-                            child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
-                            freq_child=MapNodetoFrequencies[child][min(size_map,depth)-1]
+                        if child_height > max_child_height:
+                            max_child_height = child_height
                             
-                            if freq_child<min_freq_children:
-                                min_freq_children=freq_child
+                    for depth in range(max_child_height+1):
+                        if depth==0:
+                            enc=hash(DAG.node[u]['label'])
                             
-                            vertex_label_id_list.append(child_hash)
-                            size+=MapProductionIDtoSize[child_hash]
-                        
-                        vertex_label_id_list.sort()
-                        encoding+=self.__startsymbol+str(vertex_label_id_list[0])
-                        
-                        for i in range(1,len(vertex_label_id_list)):
-                            encoding+=self.__conjsymbol+str(vertex_label_id_list[i])
-                        
-                        encoding+=self.__endsymbol
-                        encoding=hash(encoding)
-                        
-                        MapNodeToProductionsID[u].append(encoding)
-                        #size*=2 #TODO bug Navarin
-                        size+=1
-                        MapProductionIDtoSize[encoding]=size
-                        
-                        frequency = min_freq_children
-                        MapNodetoFrequencies[u].append(frequency)
-                        
-                        if Dict_features.get(encoding) is None:
-                            Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            MapNodeToProductionsID[u].append(enc)
+                            
+                            frequency=0
+                            if max_child_height==0:
+                                frequency=maxLevel - DAG.node[u]['depth']
+                            
+                            if Dict_features.get(enc) is None:
+                                Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
+                            else:
+                                Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+                            
+                            if not MapEncToId is None:
+                                MapEncToId.addElement(enc)
+                            
+                            MapNodetoFrequencies[u].append(frequency)
+                            MapProductionIDtoSize[enc]=1
                         else:
-                            Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                        
-                        if not MapEncToId is None:
-                            MapEncToId.addElement(encoding)    
+                            size=0
+                            encoding=DAG.node[u]['label']
+                            
+                            vertex_label_id_list=[]#list[string]
+                            min_freq_children=sys.maxint
+                            
+                            for child in DAG.successors(u):
+                                size_map=len(MapNodeToProductionsID[child])
+                                child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
+                                freq_child=MapNodetoFrequencies[child][min(size_map,depth)-1]
+                                
+                                if freq_child<min_freq_children:
+                                    min_freq_children=freq_child
+                                
+                                vertex_label_id_list.append(child_hash)
+                                size+=MapProductionIDtoSize[child_hash]
+                            
+                            vertex_label_id_list.sort()
+                            encoding+=self.__startsymbol+str(vertex_label_id_list[0])
+                            
+                            for i in range(1,len(vertex_label_id_list)):
+                                encoding+=self.__conjsymbol+str(vertex_label_id_list[i])
+                            
+                            encoding+=self.__endsymbol
+                            encoding=hash(encoding)
+                            
+                            MapNodeToProductionsID[u].append(encoding)
+                            #size*=2 #TODO bug Navarin
+                            size+=1
+                            MapProductionIDtoSize[encoding]=size
+                            
+                            frequency = min_freq_children
+                            MapNodetoFrequencies[u].append(frequency)
+                            
+                            if Dict_features.get(encoding) is None:
+                                Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            else:
+                                Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            
+                            if not MapEncToId is None:
+                                MapEncToId.addElement(encoding)    
 
         return Dict_features
         
