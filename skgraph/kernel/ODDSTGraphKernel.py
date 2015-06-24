@@ -21,6 +21,8 @@ along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 from graphKernel import GraphKernel
 from ..graph.GraphTools import generateDAG
+from ..graph.GraphTools import generateDAGOrdered
+from ..graph.GraphTools import orderDAGvertices
 from operator import itemgetter
 from ..graph.GraphTools import drawGraph
 from KernelTools import convert_to_sparse_matrix
@@ -340,7 +342,7 @@ class ODDSTGraphKernel(GraphKernel):
         @rtype: scipy.sparse.csr_matrix
         @return: the instance-features matrix
         """
-        if n_jobs is 1:
+        if n_jobs is 1 or n_jobs is -1:
             return self.__transform_serial(G_list,approximated,keepdictionary)
         else:
             print "WARNING: parallel calculation not implemented"
