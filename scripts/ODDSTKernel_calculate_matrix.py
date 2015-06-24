@@ -24,7 +24,7 @@ from skgraph.kernel.ODDSTGraphKernel import ODDSTGraphKernel
 from skgraph.kernel.ODDSTOrthogonalizedGraphKernel import ODDSTOrthogonalizedGraphKernel
 
 from skgraph.datasets import load_graph_datasets
-
+import numpy as np
 
 if __name__=='__main__':
     if len(sys.argv)<1:
@@ -57,18 +57,21 @@ if __name__=='__main__':
      
 
     if kernel=="ST":
+        print "Using ST kernel"
         ODDkernel=ODDSTGraphKernel(r=max_radius,l=la)
     elif kernel=="STOrthogonalized":
         ODDkernel=ODDSTOrthogonalizedGraphKernel(r=max_radius,l=la)
        
     GM=ODDkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
+    #print GM
     GMsvm=[]    
     for i in xrange(len(GM)):
         GMsvm.append([])
         GMsvm[i]=[i+1]
         GMsvm[i].extend(GM[i])
+    #print GMsvm
     from sklearn import datasets
     print "Saving Gram matrix"
     #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
-    datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
+    datasets.dump_svmlight_file(np.array(GMsvm),g_it.target, name+".svmlight")
     #print GM

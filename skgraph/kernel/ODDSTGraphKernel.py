@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Mar 11 12:52:04 2015
+Created on Wed Jun 24 12:44:02 2015
 
 Copyright 2015 Nicolo' Navarin, Riccardo Tesselli
 
@@ -19,64 +19,90 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-from skgraph.kernel.graphKernel import GraphKernel
-from scipy.sparse import csr_matrix
+from graphKernel import GraphKernel
 from ..graph.GraphTools import generateDAG
-from ..graph.GraphTools import generateDAGOrdered
-from ..graph.GraphTools import orderDAGvertices
-
+from operator import itemgetter
+from ..graph.GraphTools import drawGraph
+from KernelTools import convert_to_sparse_matrix
 import networkx as nx
-import numpy as np
 import math
-from collections import defaultdict
 import sys
+import numpy as np
 
 class ODDSTGraphKernel(GraphKernel):
     """
     Class that implements the ODDKernel with ST kernel
     """
-    def __init__(self, r=3, l=1, normalization=True, hashsz=31):
+    
+    class UniqueMap(object):
+        """
+        Inner class that creates a __map between elements and ascending unique values
+        """
+        def __init__(self):
+            self.__counter=0
+            self.__map={}
+            
+        def addElement(self,elem):
+            if self.__map.get(elem) is None:
+                self.__map[elem]=self.__counter
+                self.__counter+=1
+                
+        def getElement(self,elem):
+            return self.__map.get(elem)
+    
+    def __init__(self, r = 3, l = 1, normalization = True,show=False):
         """
         Constructor
         @type r: integer number
         @param r: ODDKernel Parameter
-
+        
         @type l: number in (0,1]
         @param l: ODDKernel Parameter
-
+        
         @type normalization: boolean
         @param normalization: True to normalize the feature vectors
-
-        @type hashsz: integer number
-        @param hashsz: numbers of bits used to compute the hash function
-
+        
         @type show: boolean
         @param show: If true shows graphs and DAGs during computation
         """
-        self.Lambda = l
-        self.max_radius = r
-        self.normalization = normalization
-        self.__hash_size = hashsz 
-        self.__bitmask = pow(2, hashsz) - 1
-        self.__startsymbol = '!' #special symbols used in encoding
-        self.__conjsymbol = '#'
-        self.__endsymbol = '?'
+        self.Lambda=l
+        self.max_radius=r
+        self.normalization=normalization
+        self.show=show
+        self.__startsymbol='!' #special symbols used in encoding
+        self.__conjsymbol='#'
+        self.__endsymbol='?'
     
-    def computeWeightedGraph(self, G):
+    def computeWeightedGraphFromFeatures(self,G,features):
         """
-        Public method that weights a graph G given its features
+        #TODO
+        """
+        featureindexes=self.getFeaturesIndexes(G)
+        wg=nx.Graph(G)
+        for u in wg.nodes():
+            wg.node[u]['weight']=0
+        for f in featureindexes.keys():
+            if not features.get(f) is None:
+                value=features.get(f)
+                DAG=self.encodingWithIndexesToDag(featureindexes[f])[0]
+                for u in DAG.nodes():
+                    wg.node[u]['weight']+=value
+        return wg
+                
+    def computeWeightedGraph(self,G):
+        """
+        Public method that weights a graph G given its features in the encoding with nodes' indexes instead of labels
         @type G: a networkx graph
         @param G: the graph to weight
-
+        
         @rtype: networkx graph
         @return: the weighted graph
         """
-        dfeatures = self.getFeatures(G, nohash=True)#TODO mettere parametro no hash
-        wg = nx.Graph(G)
-        pairs = []
+        dfeatures=self.getFeaturesNoCollisions(G, indexes=True)
+        wg=nx.Graph(G)
+        pairs=[]
         for (k,v) in dfeatures.items():
-            pairs.append((self.encodingToDag(k)[0],v))
+            pairs.append((self.encodingWithIndexesToDag(k)[0],v))
             
         for (dag,frequency) in pairs:
             for u in dag.nodes():
@@ -84,17 +110,62 @@ class ODDSTGraphKernel(GraphKernel):
                     wg.node[u]['weight']=frequency
                 else:
                     wg.node[u]['weight']+=frequency
-            
         return wg
-            
-        
-    def encodingToDag(self, encode):
+
+    def encodingWithLabelsToDag(self, encode, rootindex=0):
         """
-        Public method that creates a DAG given its encoding
+        Public method that creates a DAG given its encoding with the nodes' labels
         @type encode: string
         @param encode: the DAG's encoding
         
-        @rtype: triple (networkx.DiGraph,string,integer)
+        @rtype: triple (networkx.DiGraph,string,string)
+        @return: the triple that contains the created DAG, the left string to parse and the root's index
+        """
+        DAG=nx.DiGraph()
+        start=encode.find(self.__startsymbol)
+        if start==-1:
+            start=sys.maxint
+        end=encode.find(self.__endsymbol)
+        if end==-1:
+            end=sys.maxint
+        conj=encode.find(self.__conjsymbol)
+        if conj==-1:
+            conj=sys.maxint
+        minindex=min(start,end,conj)
+        labelnode=encode[:minindex]
+        DAG.add_node(rootindex, label=labelnode)
+        encode=encode[minindex:]
+        if len(encode)!=0:
+            if encode[0]==self.__startsymbol:
+                encode=encode[1:]
+                (childDAG,encodeleft,root,indexnext)=self.encodingWithLabelsToDag(encode,rootindex+1)
+                childrenDAG=[childDAG]
+                childrenRoot=[root]
+                while(encodeleft[0]==self.__conjsymbol):
+                    encodeleft=encodeleft[1:]
+                    (childDAG,encodeleft,root,indexnext)=self.encodingWithLabelsToDag(encodeleft,indexnext)
+                    childrenDAG.append(childDAG)
+                    childrenRoot.append(root)
+                if encodeleft[0]==self.__endsymbol:
+                    encodeleft=encodeleft[1:]
+                    compose=nx.DiGraph(DAG)
+                    for g in childrenDAG:
+                        compose=nx.compose(compose,g)
+                    for r in childrenRoot:
+                        compose.add_edge(rootindex, r)
+                    return (compose,encodeleft,rootindex,indexnext)
+            else:
+                return (DAG,encode,rootindex,rootindex+1)
+        else:
+            return (DAG,encode,rootindex,rootindex+1)
+                    
+    def encodingWithIndexesToDag(self, encode):
+        """
+        Public method that creates a DAG given its encoding with the nodes' index
+        @type encode: string
+        @param encode: the DAG's encoding
+        
+        @rtype: triple (networkx.DiGraph,string,string)
         @return: the triple that contains the created DAG, the left string to parse and the root's index
         """
         DAG=nx.DiGraph()
@@ -114,12 +185,12 @@ class ODDSTGraphKernel(GraphKernel):
         if len(encode)!=0:
             if encode[0]==self.__startsymbol:
                 encode=encode[1:]
-                (childDAG,encodeleft,root)=self.encodingToDag(encode)
+                (childDAG,encodeleft,root)=self.encodingWithIndexesToDag(encode)
                 childrenDAG=[childDAG]
                 childrenRoot=[root]
                 while(encodeleft[0]==self.__conjsymbol):
                     encodeleft=encodeleft[1:]
-                    (childDAG,encodeleft,root)=self.encodingToDag(encodeleft)
+                    (childDAG,encodeleft,root)=self.encodingWithIndexesToDag(encodeleft)
                     childrenDAG.append(childDAG)
                     childrenRoot.append(root)
                 if encodeleft[0]==self.__endsymbol:
@@ -156,82 +227,36 @@ class ODDSTGraphKernel(GraphKernel):
                 normalized_feature_vector[key] = value/sqrt_total_norm
             return normalized_feature_vector
         else :
-            return feature_list
-
-    def computeGramTest(self,X,Y):
-        """
-        Public static method to compute the Gram matrix
-        @type X: scipy.sparse.csr_matrix
-        @param X: The instance-features matrix
-        
-        @rtype: numpy matrix
-        @return: the Gram matrix
-        """
-        col1=X.indices
-        col2=Y.indices
-        col1,col2=self.__shrinkTwo(col1,col2)
-        maximum=max(max(col1),max(col2))
-        print maximum
-        data=X.data
-        row=[]
-        v=0
-        for i in range(1,X.indptr.shape[0]):
-            for j in range(X.indptr[i]-X.indptr[i-1]):
-                row.append(v)
-            v+=1
-        X=csr_matrix((data,(row,col1)),shape=(X.shape[0],maximum+1))
-        data2=Y.data
-        row2=[]
-        v=0
-        for i in range(1,Y.indptr.shape[0]):
-            for j in range(Y.indptr[i]-Y.indptr[i-1]):
-                row2.append(v)
-            v+=1
-        #print row2
-        #print col2
-        Y=csr_matrix((data2,(row2,col2)), shape=(Y.shape[0],maximum+1))
-        print X.shape, Y.shape
-        #col=self.__shrink(col) #needed to __shrink because if not can cause memory buffer overflow due to dot product implementation
-        return X.dot(Y.T).todense()
-
-    
-    def computeGram(self,X):
-        """
-        Public static method to compute the Gram matrix
-        @type X: scipy.sparse.csr_matrix
-        @param X: The instance-features matrix
-        
-        @rtype: numpy matrix
-        @return: the Gram matrix
-        """
-        col=X.indices
-        col=self.__shrink(col) #needed to __shrink because if not can cause memory buffer overflow due to dot product implementation
-        data=X.data
-        row=[]
-        v=0
-        for i in range(1,X.indptr.shape[0]):
-            for j in range(X.indptr[i]-X.indptr[i-1]):
-                row.append(v)
-            v+=1
-        X=csr_matrix((data,(row,col)))
-        return X.dot(X.T).todense()
-        
-    def computeKernelMatrixTest(self,Graphs1,Graphs2):
-        """
-        Public static method to compute the Gram matrix
-        @type X: scipy.sparse.csr_matrix
-        @param X: The instance-features matrix
-        
-        @rtype: numpy matrix
-        @return: the Gram matrix
-        """
-        X=self.transform(Graphs1)
-        Y=self.transform(Graphs2)
-        
-        return self.computeGramTest(X,Y).tolist()
-        
+            return dict(feature_list)
+            
     def computeKernelMatrixTrain(self,Graphs):
+        return self.computeGram(Graphs)
+
+    def computeGram(self, g_it, jobs=-1, approx=True, precomputed=None):
         """
+        Public static method to compute the Gram matrix
+        @type g_it: networkx graph list
+        @param g_it: graph instances
+        
+        @type jobs: integer
+        @param jobs: number of parallel jobs. if -1 then number of jobs is maximum
+        
+        @type approx: boolean
+        @param approx: if True then the approximated decomposition is used
+        
+        @type precomputed: csr_sparse matrix
+        @param precomputed: precomputed instance-features matrix
+        
+        @rtype: numpy matrix
+        @return: the Gram matrix
+        """
+        if precomputed is None:
+            precomputed=self.transform(g_it, n_jobs=jobs, approximated=approx)
+        return precomputed.dot(precomputed.T).todense().tolist()
+
+    def computeGramTest(self,X,Y,jobs=-1, approx=True, precomputed=None):
+        """
+        TODO TEST
         Public static method to compute the Gram matrix
         @type X: scipy.sparse.csr_matrix
         @param X: The instance-features matrix
@@ -239,78 +264,12 @@ class ODDSTGraphKernel(GraphKernel):
         @rtype: numpy matrix
         @return: the Gram matrix
         """
-        X=self.transform(Graphs)
-        return self.computeGram(X).tolist()
+        if precomputed is None:
+            precomputed1=self.transform(X, n_jobs=jobs, approximated=approx)
+            precomputed2=self.transform(X, n_jobs=jobs, approximated=approx)
 
-    @staticmethod
-    def __shrink(col):
-        """
-        Private method that compresses the column index vector of some csr_matrix
-        @type col: numpy array
-        @param col: array that represents the column indexes of a csr_matrix
-        
-        @rtype: list
-        @return: list of the compressed columns
-        """
-        minimums=np.sort(np.unique(col))
-        for minindex in range(len(minimums)):
-            currentmin=minimums[minindex]
-            col[np.where(col==currentmin)]=minindex
-        return col.tolist()
-    @staticmethod
-    def __shrinkTwo(col1,col2):
-        """
-        Private method that compresses the column index vector of some csr_matrix
-        @type col: numpy array
-        @param col: array that represents the column indexes of a csr_matrix
-        
-        @rtype: list
-        @return: list of the compressed columns
-        """
-        minimums=np.sort(np.unique(np.concatenate([col1,col2])))
-        for minindex in range(len(minimums)):
-            currentmin=minimums[minindex]
-            col1[np.where(col1==currentmin)]=minindex
-            col2[np.where(col2==currentmin)]=minindex
-
-        return col1.tolist(),col2.tolist()
-    def __APHash(self, key):
-        """
-        Private method that computes the hash value for a given key
-        @type key: string
-        @param key: the string to digest
-        
-        @rtype: integer number
-        @return: the digest
-        """
-        hashv = 0xAAAAAAAA
-        for i in range(len(key)):
-            if ((i & 1) == 0):
-                hashv ^= ((hashv <<  7) ^ ord(key[i]) * (hashv >> 3))
-            else:
-                hashv ^= (~((hashv << 11) + ord(key[i]) ^ (hashv >> 5)))
-        return hashv & self.__bitmask
-    
-    def __convert_to_sparse_matrix(self,feature_dict):
-        """
-        Private static method that convert the feature vector from dictionary to sparse matrix
-        @type feature_dict: Dictionary
-        @param feature_dict: a feature vector
-        
-        @rtype: scipy.sparse.csr_matrix
-        @return: the feature vector in sparse form
-        """
-        if len(feature_dict) == 0:
-            raise Exception('ERROR: something went wrong, empty feature_dict.')
-        data = feature_dict.values()
-        row, col = [], []
-        for i, j in feature_dict.iterkeys():
-            row.append( i )
-            col.append( j )
-        X = csr_matrix( (data,(row,col)), shape = (max(row)+1, max(col)+1))
-        return X
-    
-    def __transform(self, instance_id , G_orig):
+        return precomputed1.dot(precomputed2.T).todense()
+    def __transform(self, instance_id , G_orig, approximated=True, MapEncToId=None):
         """
         Private method that given a graph id and its representation computes the normalized feature vector
         @type instance_id: integer number
@@ -319,29 +278,51 @@ class ODDSTGraphKernel(GraphKernel):
         @type G_orig: Networkx graph
         @param G_orig: a Networkx graph
         
+        @type MapEncToId: self.UniqueMap
+        @param MapEncToId: Map between feature's encodings and integer values
+        
         @rtype: Dictionary
         @return: The normalized feature vector
         """
-        feature_list = defaultdict(lambda : defaultdict(float))
-        feature_list.update({(instance_id,k):v for (k,v) in self.getFeatures(G_orig).items()})
+        #feature_list = defaultdict(lambda : defaultdict(float))
+        feature_list={}
+        if approximated:
+            feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesApproximated(G_orig,MapEncToId).items()})
+        else:
+            feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesNoCollisions(G_orig,MapEncToId).items()})
         return self.__normalization(feature_list)
         
-    def __transform_serial(self, G_list):
+    def __transform_serial(self, G_list, approximated=True,keepdictionary=False):
         """
         Private method that converts a networkx graph list into a instance-features matrix
         @type G_list: networkx graph generator
         @param G_list: list of the graph to convert
         
+        @type approximated: boolean
+        @param approximated: true if use a hash function with probable collisions during feature decomposition. False no collision guaranteed
+        
+        @type keepdictionary: boolean
+        @param keepdictionary: True if the instance-feature matrix is kept as a dictionary. Else is a csr_matrix
+        
         @rtype: scipy.sparse.csr_matrix
         @return: the instance-features matrix
         """
         feature_dict={}
+        MapEncToId=None
+        if not keepdictionary:
+            MapEncToId=self.UniqueMap()
         for instance_id , G in enumerate( G_list ):
+            if self.show:
+                drawGraph(G)
             
-            feature_dict.update(self.__transform( instance_id, G ))
-        return self.__convert_to_sparse_matrix( feature_dict )
+            feature_dict.update(self.__transform( instance_id, G, approximated, MapEncToId))
+        if keepdictionary:
+            return (convert_to_sparse_matrix( feature_dict, MapEncToId ),feature_dict)
+        else:
+            return convert_to_sparse_matrix( feature_dict, MapEncToId )
     
-    def transform(self, G_list, n_jobs = 1):
+    
+    def transform(self, G_list, n_jobs = -1, approximated=True, keepdictionary=False):
         """
         Public method that given a list of networkx graph it creates the sparse matrix (example, features) in parallel or serial
         @type G_list: networkx graph generator
@@ -350,14 +331,24 @@ class ODDSTGraphKernel(GraphKernel):
         @type n_jobs: integer number
         @param n_jobs: number of parallel jobs
         
+        @type approximated: boolean
+        @param approximated: true if use a hash function with probable collisions during feature decomposition. False no collision guaranteed
+        
+        @type keepdictionary: boolean
+        @param keepdictionary: True if the instance-feature matrix is kept as a dictionary. Else is a csr_matrix
+        
         @rtype: scipy.sparse.csr_matrix
         @return: the instance-features matrix
         """
-        return self.__transform_serial(G_list)
-    
-    def getFeatures(self,G,nohash=False):
+        if n_jobs is 1:
+            return self.__transform_serial(G_list,approximated,keepdictionary)
+        else:
+            print "WARNING: parallel calculation not implemented"
+            return self.__transform_serial(G_list,approximated,keepdictionary)
+
+    def getFeaturesIndexes(self,G):
         """
-        Public method that given a networkx graph G will create the dictionary representing its features according to the ST Kernel
+        Public method that given a networkx graph G will create the dictionary representing its encoded features and the corresponding index nodes
         @type G: networkx graph
         @param G: the graph to extract features from
         
@@ -366,101 +357,285 @@ class ODDSTGraphKernel(GraphKernel):
         """
         Dict_features={}
         for v in G.nodes():
-            if G.node[v]['viewpoint']:
-                if not G.graph['ordered']:
-                    (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
-                    orderDAGvertices(DAG)
-                else:
-                    (DAG,maxLevel)=generateDAGOrdered(G, v, self.max_radius)
-
-                MapNodeToProductionsID={} #k:list(unsigned)
-                for u in DAG.nodes():
-                    MapNodeToProductionsID[u]=[]
-                MapNodetoFrequencies={} #k:list(int)
-                for u in DAG.nodes():
-                    MapNodetoFrequencies[u]=[]
-                MapProductionIDtoSize={} #k:int
-        
-                for u in nx.topological_sort(DAG)[::-1]:
-                    max_child_height=0
-                    for child in DAG.successors(u):
-                        child_height=0
-                        if not MapNodeToProductionsID.get(child) is None:
-                            child_height=len(MapNodeToProductionsID.get(child))
+            DAG=generateDAG(G, v, self.max_radius)[0]
+            
+            if self.show:
+                drawGraph(DAG,v)
+                
+            MapNodeToProductionsID={}
+            MapNodeToProductionsIDInd={}
+            for u in DAG.nodes():
+                MapNodeToProductionsID[u]=[]
+                MapNodeToProductionsIDInd[u]=[]
+    
+            for u in nx.topological_sort(DAG)[::-1]:
+                max_child_height=0
+                for child in DAG.successors(u):
+                    child_height=len(MapNodeToProductionsID.get(child))
+                    
+                    if child_height > max_child_height:
+                        max_child_height = child_height
                         
-                        if child_height > max_child_height:
-                            max_child_height = child_height
+                for depth in range(max_child_height+1):
+                    if depth==0:
+                        enc=DAG.node[u]['label']
+                        encind=str(u)
+                        
+                        MapNodeToProductionsID[u].append(enc)
+                        MapNodeToProductionsIDInd[u].append(encind)
+                        
+                        if Dict_features.get(enc) is None:
+                            Dict_features[enc]=encind
+                        
+                    else:
+                        encoding=DAG.node[u]['label']
+                        encodingind=str(u)
+                        
+                        vertex_label_id_list=[]
+                        
+                        for child in DAG.successors(u):
+                            size_map=len(MapNodeToProductionsID[child])
+                            child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
+                            child_hashind=MapNodeToProductionsIDInd[child][min(size_map,depth)-1]
                             
-                    for depth in range(max_child_height+1):
-                        hash_subgraph_code = 1
-                        if depth==0:
-                            enc=0
-                            if nohash:
-                                enc=str(u)
-                            else:
-                                enc=self.__APHash(DAG.node[u]['label'])
-                            MapNodeToProductionsID[u].append(enc)
-                            
-                            frequency=0
-                            if max_child_height==0:
-                                frequency=maxLevel - DAG.node[u]['depth']
-                            
-                            if Dict_features.get(enc) is None:
-                                Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
-                            else:
-                                Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
-                            
-                            MapNodetoFrequencies[u].append(frequency)
-                            MapProductionIDtoSize[enc]=1
+                            vertex_label_id_list.append((child_hash,child_hashind))
+
+                        
+                        vertex_label_id_list.sort(key=itemgetter(0))
+                        encoding+=self.__startsymbol+vertex_label_id_list[0][0]
+                        encodingind+=self.__startsymbol+vertex_label_id_list[0][1]
+                        
+                        for i in range(1,len(vertex_label_id_list)):
+                            encoding+=self.__conjsymbol+vertex_label_id_list[i][0]
+                            encodingind+=self.__conjsymbol+vertex_label_id_list[i][1]
+                        
+                        encoding+=self.__endsymbol
+                        encodingind+=self.__endsymbol
+                        
+                        MapNodeToProductionsID[u].append(encoding)
+                        MapNodeToProductionsIDInd[u].append(encodingind)
+                        
+                        if Dict_features.get(encoding) is None:
+                            Dict_features[encoding]=encodingind
+                        
+        return Dict_features
+    
+    def getFeaturesNoCollisions(self,G,MapEncToId=None,indexes=False):
+        """
+        Public method that given a networkx graph G will create the dictionary representing its features according to the ST Kernel
+        @type G: networkx graph
+        @param G: the graph to extract features from
+        
+        @type MapEncToId: self.UniqueMap
+        @param MapEncToId: Map between feature's encodings and integer values
+        
+        @type indexes: boolean
+        @param indexes: if True the feature is encoded using the nodes' index rather than theirs labels
+        
+        @rtype: dictionary
+        @return: the encoding-feature dictionary
+        """
+        Dict_features={}
+        for v in G.nodes():
+            (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
+            
+            if self.show:
+                drawGraph(DAG,v)
+                
+            MapNodeToProductionsID={} #k:list(unsigned)
+            MapNodetoFrequencies={} #k:list(int)
+            for u in DAG.nodes():
+                MapNodeToProductionsID[u]=[]
+                MapNodetoFrequencies[u]=[]
+            MapProductionIDtoSize={} #k:int
+    
+            for u in nx.topological_sort(DAG)[::-1]:
+                max_child_height=0
+                for child in DAG.successors(u):
+                    child_height=0
+                    child_height=len(MapNodeToProductionsID.get(child))
+                    
+                    if child_height > max_child_height:
+                        max_child_height = child_height
+                 
+                for depth in range(max_child_height+1):
+                    if depth==0:
+                        if not indexes:
+                            enc=DAG.node[u]['label']
                         else:
-                            size=0
-                            encoding=0
-                            if nohash:
-                                encoding=str(u)
-                            else:
-                                encoding=DAG.node[u]['label']
+                            enc=str(u)
+                        
+                        MapNodeToProductionsID[u].append(enc)
+                        
+                        frequency=0
+                        if max_child_height==0:
+                            frequency=maxLevel - DAG.node[u]['depth']
+                        
+                        if Dict_features.get(enc) is None:
+                            Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
+                        else:
+                            Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+                        
+                        if not MapEncToId is None:
+                            MapEncToId.addElement(enc)
+                        
+                        MapNodetoFrequencies[u].append(frequency)
+                        MapProductionIDtoSize[enc]=1
+                    else:
+                        size=0
+                        if not indexes:
+                            encoding=DAG.node[u]['label']
+                        else:
+                            encoding=str(u)
+                        
+                        vertex_label_id_list=[]#list[string]
+                        min_freq_children=sys.maxint
+                        
+                        for child in DAG.successors(u):
+                            size_map=len(MapNodeToProductionsID[child])
+                            child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
+                            freq_child=MapNodetoFrequencies[child][min(size_map,depth)-1]
                             
-                            vertex_label_id_list=[]#list[string]
-                            min_freq_children=sys.maxint
+                            if freq_child<min_freq_children:
+                                min_freq_children=freq_child
                             
-                            for child in DAG.successors(u):
-                                size_map=len(MapNodeToProductionsID[child])
-                                child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
-                                freq_child=MapNodetoFrequencies[child][min(size_map,depth)-1]
-                                
-                                if freq_child<min_freq_children:
-                                    min_freq_children=freq_child
-                                
-                                vertex_label_id_list.append(str(child_hash))
-                                size+=MapProductionIDtoSize[child_hash]
+                            vertex_label_id_list.append(child_hash)
+                            size+=MapProductionIDtoSize[child_hash]
+                        
+                        vertex_label_id_list.sort()
+                        encoding+=self.__startsymbol+vertex_label_id_list[0]
+                        
+                        for i in range(1,len(vertex_label_id_list)):
+                            encoding+=self.__conjsymbol+vertex_label_id_list[i]
+                        
+                        encoding+=self.__endsymbol
+                        
+                        MapNodeToProductionsID[u].append(encoding)
+                        size+=1
+                        MapProductionIDtoSize[encoding]=size
+                        
+                        frequency = min_freq_children
+                        MapNodetoFrequencies[u].append(frequency)
+                        
+                        if Dict_features.get(encoding) is None:
+                            Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                        else:
+                            Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                        
+                        if not MapEncToId is None:
+                            MapEncToId.addElement(encoding)    
+                        
+        return Dict_features
+    
+    def getFeaturesApproximated(self,G,MapEncToId=None):#TODO usa xxhash lib con bitsize settabile
+        """
+        Public method that given a networkx graph G will create the dictionary representing its features according to the ST Kernel.
+        The computation will use a hash function to encode a feature. There might be collisions
+        @type G: networkx graph
+        @param G: the graph to extract features from
+        
+        @type hashsize: integer
+        @param hashsize: number of bits of the hash function to use
+        
+        @type MapEncToId: self.UniqueMap
+        @param MapEncToId: Map between feature's encodings and integer values
+        
+        @rtype: dictionary
+        @return: the encoding-feature dictionary
+        """
+        Dict_features={}
+        for v in G.nodes():
+            (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
+            
+            if self.show:
+                drawGraph(DAG,v)
+                
+            MapNodeToProductionsID={} #k:list(unsigned)
+            MapNodetoFrequencies={} #k:list(int)
+            for u in DAG.nodes():
+                MapNodeToProductionsID[u]=[]
+                MapNodetoFrequencies[u]=[]
+            MapProductionIDtoSize={} #k:int
+    
+            for u in nx.topological_sort(DAG)[::-1]:
+                max_child_height=0
+                for child in DAG.successors(u):
+                    child_height=len(MapNodeToProductionsID.get(child))
+                    
+                    if child_height > max_child_height:
+                        max_child_height = child_height
+                        
+                for depth in range(max_child_height+1):
+                    if depth==0:
+                        enc=hash(DAG.node[u]['label'])
+                        
+                        MapNodeToProductionsID[u].append(enc)
+                        
+                        frequency=0
+                        if max_child_height==0:
+                            frequency=maxLevel - DAG.node[u]['depth']
+                        
+                        if Dict_features.get(enc) is None:
+                            Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
+                        else:
+                            Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+                        
+                        if not MapEncToId is None:
+                            MapEncToId.addElement(enc)
+                        
+                        MapNodetoFrequencies[u].append(frequency)
+                        MapProductionIDtoSize[enc]=1
+                    else:
+                        size=0
+                        encoding=DAG.node[u]['label']
+                        
+                        vertex_label_id_list=[]#list[string]
+                        min_freq_children=sys.maxint
+                        
+                        for child in DAG.successors(u):
+                            size_map=len(MapNodeToProductionsID[child])
+                            child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
+                            freq_child=MapNodetoFrequencies[child][min(size_map,depth)-1]
                             
-                            vertex_label_id_list.sort()
-                            encoding+=self.__startsymbol+vertex_label_id_list[0]
+                            if freq_child<min_freq_children:
+                                min_freq_children=freq_child
                             
-                            for i in range(1,len(vertex_label_id_list)):
-                                encoding+=self.__conjsymbol+vertex_label_id_list[i]
-                            
-                            encoding+=self.__endsymbol
-                            if nohash:
-                                hash_subgraph_code=encoding
-                            else:
-                                hash_subgraph_code=self.__APHash(encoding)
-                            MapNodeToProductionsID[u].append(hash_subgraph_code)
-                            size+=1
-                            MapProductionIDtoSize[hash_subgraph_code]=size
-                            
-                            frequency = min_freq_children
-                            MapNodetoFrequencies[u].append(frequency)
-                            
-                            if Dict_features.get(hash_subgraph_code) is None:
-                                Dict_features[hash_subgraph_code]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                            else:
-                                Dict_features[hash_subgraph_code]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            vertex_label_id_list.append(child_hash)
+                            size+=MapProductionIDtoSize[child_hash]
+                        
+                        vertex_label_id_list.sort()
+                        encoding+=self.__startsymbol+str(vertex_label_id_list[0])
+                        
+                        for i in range(1,len(vertex_label_id_list)):
+                            encoding+=self.__conjsymbol+str(vertex_label_id_list[i])
+                        
+                        encoding+=self.__endsymbol
+                        encoding=hash(encoding)
+                        
+                        MapNodeToProductionsID[u].append(encoding)
+                        #size*=2 #TODO bug Navarin
+                        size+=1
+                        MapProductionIDtoSize[encoding]=size
+                        
+                        frequency = min_freq_children
+                        MapNodetoFrequencies[u].append(frequency)
+                        
+                        if Dict_features.get(encoding) is None:
+                            Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                        else:
+                            Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                        
+                        if not MapEncToId is None:
+                            MapEncToId.addElement(encoding)    
+
         return Dict_features
         
     def kernelFunction(self,Graph1, Graph2):
-        #calculate the kernel between two graphs
+        """
+        #TODO
+        """
         G_list = [Graph1, Graph2]
-        vec=self.transform(G_list)
-        return np.dot(vec[0], vec[1].T)
-        #pass
+        X=self.transform(G_list, n_jobs=1)
+        row1=X[0]
+        row2=X[1]
+        return row1.dot(row2.T)[0,0]
