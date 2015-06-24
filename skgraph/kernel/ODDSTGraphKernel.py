@@ -268,7 +268,7 @@ class ODDSTGraphKernel(GraphKernel):
             precomputed1=self.transform(X, n_jobs=jobs, approximated=approx)
             precomputed2=self.transform(X, n_jobs=jobs, approximated=approx)
 
-        return precomputed1.dot(precomputed2.T).todense()
+        return precomputed1.dot(precomputed2.T).todense().tolist()
     def __transform(self, instance_id , G_orig, approximated=True, MapEncToId=None):
         """
         Private method that given a graph id and its representation computes the normalized feature vector
