@@ -36,6 +36,7 @@ import networkx as nx
 import copy
 from KernelTools import convert_to_sparse_matrix
 from graphKernel import GraphKernel
+from scipy.sparse import dok_matrix
 
 class WLGraphKernel(GraphKernel):
     """
@@ -70,7 +71,7 @@ class WLGraphKernel(GraphKernel):
         """
         gl = [g_1, g_2]
         return self.computeGram(gl)[0, 1]
-    
+
     def transform(self, graph_list):
         """
         TODO
@@ -78,65 +79,131 @@ class WLGraphKernel(GraphKernel):
         n = len(graph_list) #number of graphs
         
         phi={} #dictionary representing the phi vector for each graph. phi[r][c]=v each row is a graph. each column is a feature
-        
+        #phi=dok_matrix()
         NodeIdToLabelId = [0] * n # NodeIdToLabelId[i][j] is labelid of node j in graph i
         label_lookup = {} #map from features to corresponding id
-        label_counter = 1 #incremental value for label ids
-        
-        for i in range(n): #for each graph            
+        label_counter = 0 #incremental value for label ids
+
+        for i in xrange(n): #for each graph            
             NodeIdToLabelId[i] = {}
 
             for j in graph_list[i].nodes():
-                #print graph_list[i].node[j]['label']
-                if not label_lookup.has_key("0|"+str(graph_list[i].node[j]['label'])):#update label_lookup and label ids
-                    label_lookup["0|"+str(graph_list[i].node[j]['label'])] = label_counter
+                enc="0"+self.__startsymbol+graph_list[i].node[j]['label']
+                if enc not in label_lookup:#update label_lookup and label ids
+                    label_lookup[enc] = label_counter
                     NodeIdToLabelId[i][j] = label_counter
                     label_counter += 1
                 else:
-                    NodeIdToLabelId[i][j] = label_lookup["0|"+str(graph_list[i].node[j]['label'])]
-                
-                if not phi.has_key((i,label_lookup["0|"+str(graph_list[i].node[j]['label'])])):
-                    phi[(i,label_lookup["0|"+str(graph_list[i].node[j]['label'])])]=0
-                phi[(i,label_lookup["0|"+str(graph_list[i].node[j]['label'])])]+=1
+                    NodeIdToLabelId[i][j] = label_lookup[enc]
+                #print enc, label_lookup[enc]
+                if (i,label_lookup[enc]) not in phi:
+                    phi[i,label_lookup[enc]]=0
+                phi[i,label_lookup[enc]]+=1
         
         ### MAIN LOOP
         it = 0
         NewNodeIdToLabelId = copy.deepcopy(NodeIdToLabelId)
-        #NewNodeIdToLabelId =[0] * n 
-        while it < self.h:
-            label_lookup = {}
+        #label_lookup = {}
 
-            for i in range(n): #for each graph
+        while it < self.h:
+            #label_lookup = {}
+
+            for i in xrange(n): #for each graph
                 for j in graph_list[i].nodes(): #for each node, consider its neighbourhood
                     neighbors=[]
                     for u in graph_list[i].neighbors(j):
-                        #print u
+                        #print u,
                         neighbors.append(NodeIdToLabelId[i][u])
                     neighbors.sort()
-                    if len(neighbors)==0:
-                        print "Empty neighbors"
-                    #MODIFICATO RISPETTO a TESSELLI str(it)+self.__startsymbol+
-                    long_label_string=str(it+1)+"|"+str(NodeIdToLabelId[i][j])+self.__startsymbol
+                    #print
+                    long_label_string=str(it+1)+self.__startsymbol+str(NodeIdToLabelId[i][j])
                     for u in neighbors:
-                        long_label_string+=str(u)+self.__conjsymbol
-                    long_label_string=long_label_string[:-1]+self.__endsymbol
-                    if len(neighbors)==0:
-                        print long_label_string
-
-                    if not label_lookup.has_key(long_label_string):
+                        long_label_string+=self.__conjsymbol+str(u)
+                    #long_label_string=long_label_string[:-1]+self.__endsymbol
+                    if long_label_string not in label_lookup:
                         label_lookup[long_label_string] = label_counter
                         NewNodeIdToLabelId[i][j] = label_counter
                         label_counter += 1
                     else:
                         NewNodeIdToLabelId[i][j] = label_lookup[long_label_string]
-                        
-                    if not phi.has_key((i,NewNodeIdToLabelId[i][j])):
-                        phi[(i,NewNodeIdToLabelId[i][j])]=0
-                    phi[(i,NewNodeIdToLabelId[i][j])]+=1
+                    #print long_label_string, NewNodeIdToLabelId[i][j]
+    
+                    if (i,NewNodeIdToLabelId[i][j]) not in phi:
+                        phi[i,NewNodeIdToLabelId[i][j]]=0
+                    phi[i,NewNodeIdToLabelId[i][j]]+=1
             
             NodeIdToLabelId = copy.deepcopy(NewNodeIdToLabelId)
             it = it + 1
+        #return dok_matrix(phi.todense()).tocsr()
         return convert_to_sparse_matrix(phi)
+#    def transform(self, graph_list):
+#        """
+#        TODO
+#        """
+#        n = len(graph_list) #number of graphs
+#        
+#        phi={} #dictionary representing the phi vector for each graph. phi[r][c]=v each row is a graph. each column is a feature
+#        
+#        NodeIdToLabelId = [0] * n # NodeIdToLabelId[i][j] is labelid of node j in graph i
+#        label_lookup = {} #map from features to corresponding id
+#        label_counter = 1 #incremental value for label ids
+#        
+#        for i in range(n): #for each graph            
+#            NodeIdToLabelId[i] = {}
+#
+#            for j in graph_list[i].nodes():
+#                #print graph_list[i].node[j]['label']
+#                if not label_lookup.has_key("0|"+str(graph_list[i].node[j]['label'])):#update label_lookup and label ids
+#                    label_lookup["0|"+str(graph_list[i].node[j]['label'])] = label_counter
+#                    NodeIdToLabelId[i][j] = label_counter
+#                    label_counter += 1
+#                else:
+#                    NodeIdToLabelId[i][j] = label_lookup["0|"+str(graph_list[i].node[j]['label'])]
+#                
+#                if not phi.has_key((i,label_lookup["0|"+str(graph_list[i].node[j]['label'])])):
+#                    phi[(i,label_lookup["0|"+str(graph_list[i].node[j]['label'])])]=0
+#                phi[(i,label_lookup["0|"+str(graph_list[i].node[j]['label'])])]+=1
+#        
+#        ### MAIN LOOP
+#        it = 0
+#        NewNodeIdToLabelId = copy.deepcopy(NodeIdToLabelId)
+#        #NewNodeIdToLabelId =[0] * n 
+#        while it < self.h:
+#            label_lookup = {}
+#
+#            for i in range(n): #for each graph
+#                for j in graph_list[i].nodes(): #for each node, consider its neighbourhood
+#                    neighbors=[]
+#                    for u in graph_list[i].neighbors(j):
+#                        #print u
+#                        neighbors.append(NodeIdToLabelId[i][u])
+#                    neighbors.sort()
+#                    if len(neighbors)==0:
+#                        print "Empty neighbors"
+#                    #MODIFICATO RISPETTO a TESSELLI str(it)+self.__startsymbol+
+#                    long_label_string=str(it+1)+"|"+str(NodeIdToLabelId[i][j])+self.__startsymbol
+#                    for u in neighbors:
+#                        long_label_string+=str(u)+self.__conjsymbol
+#                    #long_label_string=long_label_string[:-1]+self.__endsymbol
+#                    long_label_string=long_label_string[:-1]+self.__endsymbol
+#
+#                    if len(neighbors)==0:
+#                        print long_label_string
+#
+#                    if not label_lookup.has_key(long_label_string):
+#                        label_lookup[long_label_string] = label_counter
+#                        NewNodeIdToLabelId[i][j] = label_counter
+#                        label_counter += 1
+#                    else:
+#                        NewNodeIdToLabelId[i][j] = label_lookup[long_label_string]
+#                        
+#                    if not phi.has_key((i,NewNodeIdToLabelId[i][j])):
+#                        phi[(i,NewNodeIdToLabelId[i][j])]=0
+#                    phi[(i,NewNodeIdToLabelId[i][j])]+=1
+#            
+#            NodeIdToLabelId = copy.deepcopy(NewNodeIdToLabelId)
+#            it = it + 1
+#        return convert_to_sparse_matrix(phi)
             
     def __normalization(self, gram):
         """
