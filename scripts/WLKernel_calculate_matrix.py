@@ -81,7 +81,6 @@ if __name__=='__main__':
         output.write(str(g_it.target[i])+" 0:"+str(i+1)+" ")
         for j in range(len(GM[i])):
             output.write(str(j+1)+":"+str(GM[i][j])+" ")
-            assert(GM[i][j]>0)
         output.write("\n")
     output.close()
     #print GMsvm
