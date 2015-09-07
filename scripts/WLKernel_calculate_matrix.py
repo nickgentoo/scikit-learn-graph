@@ -64,14 +64,27 @@ if __name__=='__main__':
        
     GM=ODDkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
     #print GM
-    GMsvm=[]    
+#    GMsvm=[]    
+#    for i in xrange(len(GM)):
+#        GMsvm.append([])
+#        GMsvm[i]=[i+1]
+#        GMsvm[i].extend(GM[i])
+#    #print GMsvm
+#    from sklearn import datasets
+#    print "Saving Gram matrix"
+#    #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
+#    datasets.dump_svmlight_file(np.array(GMsvm),g_it.target, name+".svmlight")
+#    #Test manual dump
+    print "Saving Gram matrix"
+    output=open(name+".svmlight","w")
     for i in xrange(len(GM)):
-        GMsvm.append([])
-        GMsvm[i]=[i+1]
-        GMsvm[i].extend(GM[i])
+        output.write(str(g_it.target[i])+" 0:"+str(i+1)+" ")
+        for j in range(len(GM[i])):
+            output.write(str(j+1)+":"+str(GM[i][j])+" ")
+            assert(GM[i][j]>0)
+        output.write("\n")
+    output.close()
     #print GMsvm
     from sklearn import datasets
-    print "Saving Gram matrix"
     #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
-    datasets.dump_svmlight_file(np.array(GMsvm),g_it.target, name+".svmlight")
     #print GM
