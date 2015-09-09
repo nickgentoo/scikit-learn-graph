@@ -52,7 +52,7 @@ class ODDSTGraphKernel(GraphKernel):
         def getElement(self,elem):
             return self.__map.get(elem)
     
-    def __init__(self, r = 3, l = 1, normalization = True,show=False):
+    def __init__(self, r = 3, l = 1, normalization = True):
         """
         Constructor
         @type r: integer number
@@ -70,7 +70,6 @@ class ODDSTGraphKernel(GraphKernel):
         self.Lambda=l
         self.max_radius=r
         self.normalization=normalization
-        self.show=show
         self.__startsymbol='!' #special symbols used in encoding
         self.__conjsymbol='#'
         self.__endsymbol='?'
@@ -314,8 +313,6 @@ class ODDSTGraphKernel(GraphKernel):
         if not keepdictionary:
             MapEncToId=self.UniqueMap()
         for instance_id , G in enumerate( G_list ):
-            if self.show:
-                drawGraph(G)
             
             feature_dict.update(self.__transform( instance_id, G, approximated, MapEncToId))
         if keepdictionary:
@@ -365,9 +362,6 @@ class ODDSTGraphKernel(GraphKernel):
                     orderDAGvertices(DAG)
                 else:
                     (DAG,maxLevel)=generateDAGOrdered(G, v, self.max_radius)
-            
-                if self.show:
-                    drawGraph(DAG,v)
                     
                 MapNodeToProductionsID={}
                 MapNodeToProductionsIDInd={}
@@ -445,9 +439,6 @@ class ODDSTGraphKernel(GraphKernel):
         Dict_features={}
         for v in G.nodes():
             (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
-            
-            if self.show:
-                drawGraph(DAG,v)
                 
             MapNodeToProductionsID={} #k:list(unsigned)
             MapNodetoFrequencies={} #k:list(int)
@@ -555,12 +546,10 @@ class ODDSTGraphKernel(GraphKernel):
             if G.node[v]['viewpoint']:
                 if not G.graph['ordered']:
                     (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
-                    orderDAGvertices(DAG)
+                    #orderDAGvertices(DAG)
                 else:
                     (DAG,maxLevel)=generateDAGOrdered(G, v, self.max_radius)
             
-                if self.show:
-                    drawGraph(DAG,v)
                     
                 MapNodeToProductionsID={} #k:list(unsigned)
                 MapNodetoFrequencies={} #k:list(int)
@@ -577,9 +566,9 @@ class ODDSTGraphKernel(GraphKernel):
                         if child_height > max_child_height:
                             max_child_height = child_height
                             
-                    for depth in range(max_child_height+1):
+                    for depth in xrange(max_child_height+1):
                         if depth==0:
-                            enc=hash(DAG.node[u]['label'])
+                            enc=hash(str(DAG.node[u]['label']))
                             
                             MapNodeToProductionsID[u].append(enc)
                             
@@ -599,7 +588,7 @@ class ODDSTGraphKernel(GraphKernel):
                             MapProductionIDtoSize[enc]=1
                         else:
                             size=0
-                            encoding=DAG.node[u]['label']
+                            encoding=str(DAG.node[u]['label'])
                             
                             vertex_label_id_list=[]#list[string]
                             min_freq_children=sys.maxint

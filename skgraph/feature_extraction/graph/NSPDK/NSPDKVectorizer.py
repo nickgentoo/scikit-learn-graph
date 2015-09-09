@@ -21,12 +21,11 @@ You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from dependencies.eden import graph
-from graphKernel import *
+from . import _NSPDKgraph as graph
 """
     Transforms labeled, weighted, nested graphs in sparse vectors.
 """
-class NSPDKVectorizer(GraphKernel):
+class NSPDKVectorizer():
     
     def __init__(self,
                      r = 3,

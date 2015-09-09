@@ -26,12 +26,12 @@ class ODDSTVectorizer():
     Transforms labeled, weighted, nested graphs in sparse 
     vectors using ODDST graph kernel representation.
     """
-    def __init__(self, r = 3, l = 1, normalization = True, hashsz=20):
+    def __init__(self, r = 3, l = 1, normalization = True):
                          self.vectObject=ODDSTGraphKernel.ODDSTGraphKernel(
                                            r ,
                                            l ,
                                            normalization ,
-                                           hashsz)
+                                           show=False)
 
     def transform(self, G_list):
          return self.vectObject.transform(G_list)

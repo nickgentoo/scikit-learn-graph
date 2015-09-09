@@ -19,7 +19,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+from copy import copy,deepcopy
 import pylab
 import networkx as nx
 from collections import deque
@@ -67,25 +67,34 @@ def generateDAG(G,index_start_node,height):
     @rtype: tuple
     @return: built DAG and its maxheight
     """
+    #print "height", height
     Dict_distance_from_root={} #Create map node distance from root
     Dict_distance_from_root[index_start_node]=0
     Dict_already_explored={} #We use a map instead of a vector since the limited depth breadth first visit can visit much fewer vertices than there are vertices in total
     Dict_already_explored[index_start_node]=True
     Deque_queue=deque([index_start_node]) #Initialize queue
-    Dict_labels=dict((n,d['label']) for n,d in G.nodes(data=True))
-    #print G.nodes(data=True)[1]
-    if 'veclabel' in G.nodes(data=True)[0][1]:
-        #print "veclabels present"
-        Dict_veclabels=dict((n,d['veclabel']) for n,d in G.nodes(data=True))
-    else:
-        pass
+#    Dict_labels=dict((n,d['label']) for n,d in G.nodes(data=True))
+#    #print G.nodes(data=True)[1]
+#    if 'veclabel' in G.nodes(data=True)[0][1]:
+#        #print "veclabels present"
+#        Dict_veclabels=dict((n,d['veclabel']) for n,d in G.nodes(data=True))
+#    else:
+#        pass
         #print "no vectlabels detected"
     DAG=nx.DiGraph() #Directed Graph
-    if 'veclabel' in G.nodes(data=True)[0][1]:
-        DAG.add_node(index_start_node, depth=0,label=Dict_labels[index_start_node],veclabel=Dict_veclabels[index_start_node])
+    #inserti first vertex
+    #DAG.add_node(index_start_node, depth=0)
+    #print G.node[index_start_node]
+    #for attr,val in G.node[index_start_node].items():
+        #print attr, val
+    ########newdict=deepcopy(G.node[index_start_node])
+    newdict=copy(G.node[index_start_node])
 
-    else:       
-        DAG.add_node(index_start_node, depth=0,label=Dict_labels[index_start_node])
+    newdict['depth']=0
+    #print newdict
+    DAG.add_node(index_start_node,attr_dict=newdict)
+    #print DAG[index_start_node]
+    #print DAG[index_start_node]['label']
     DAG.graph['root']=index_start_node
     maxLevel=0
     while Deque_queue: #while the queue is not empty
@@ -101,11 +110,16 @@ def generateDAG(G,index_start_node,height):
                         maxLevel=Dict_distance_from_root[v]
                     Dict_already_explored[v]=True
                     Deque_queue.append(v)
-                    if 'veclabel' in G.nodes(data=True)[0][1]:
-                        DAG.add_node(v, depth=Dict_distance_from_root[v],label=Dict_labels[v],veclabel=Dict_veclabels[v])
-
-                    else:
-                        DAG.add_node(v, depth=Dict_distance_from_root[v],label=Dict_labels[v])
+                    
+                    #DAG.add_node(v, depth=Dict_distance_from_root[v])
+                    newdict=copy(G.node[v])
+                    newdict['depth']=Dict_distance_from_root[v]
+                    #print newdict
+                    DAG.add_node(v,attr_dict=newdict)
+                    #print DAG.nodes(data=True)[v]
+                    #print "added node"                  
+                        
+                        
                     DAG.add_edge(u,v)
                     
         Deque_queue.popleft() #current node has been processed, process next one

@@ -275,3 +275,131 @@ def load_graphs_synthetic():
     target=_target,
     labels=True,
     veclabels=True)
+    
+def load_graphs_BZR():
+    """Load the BZR graph dataset for graph classification from:
+        Neumann, M., Garnett R., Bauckhage Ch., Kersting K.: Propagation Kernels: Efficient Graph 
+        Kernels from Propagated Information. Under review at MLJ.
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/BZR_graph_labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/BZR.gspan'
+    #input_target_url='datasets/ENZYMES.labels'  
+    #input_data_url='datasets/ENZYMES.gspan'
+    
+    _target=load_target(input_target_url)
+    g_it=instance_to_graph(input = input_data_url) #url
+    #return Bunch(data=flat_data,
+    #            target=target.astype(np.int),
+    #           target_names=np.arange(10),
+    #            images=images,
+    #            DESCR=descr)
+    print 'Loaded BZR graph dataset for  graph classification from:'
+    print 'Neumann, M., Garnett R., Bauckhage Ch., Kersting K.: Propagation Kernels: Efficient Graph' 
+    print 'Kernels from Propagated Information. MLJ 2015.'
+    return Bunch(graphs=[i for i in g_it],
+    target=_target,
+    labels=True,
+    veclabels=True)
+    
+def load_graphs_COX2():
+    """Load the COX2 graph dataset for graph classification from:
+        Neumann, M., Garnett R., Bauckhage Ch., Kersting K.: Propagation Kernels: Efficient Graph 
+        Kernels from Propagated Information. Under review at MLJ.
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/COX2_graph_labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/COX2.gspan'
+    #input_target_url='datasets/ENZYMES.labels'  
+    #input_data_url='datasets/ENZYMES.gspan'
+    
+    _target=load_target(input_target_url)
+    g_it=instance_to_graph(input = input_data_url) #url
+    #return Bunch(data=flat_data,
+    #            target=target.astype(np.int),
+    #           target_names=np.arange(10),
+    #            images=images,
+    #            DESCR=descr)
+    print 'Loaded COX2 graph dataset for  graph classification from:'
+    print 'Neumann, M., Garnett R., Bauckhage Ch., Kersting K.: Propagation Kernels: Efficient Graph' 
+    print 'Kernels from Propagated Information. MLJ 2015.'
+    return Bunch(graphs=[i for i in g_it],
+    target=_target,
+    labels=True,
+    veclabels=True)
+    
+def load_graphs_DHFR():
+    """Load the DHFR graph dataset for graph classification from:
+        Neumann, M., Garnett R., Bauckhage Ch., Kersting K.: Propagation Kernels: Efficient Graph 
+        Kernels from Propagated Information. Under review at MLJ.
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/DHFR_graph_labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/DHFR.gspan'
+    #input_target_url='datasets/ENZYMES.labels'  
+    #input_data_url='datasets/ENZYMES.gspan'
+    
+    _target=load_target(input_target_url)
+    g_it=instance_to_graph(input = input_data_url) #url
+    #return Bunch(data=flat_data,
+    #            target=target.astype(np.int),
+    #           target_names=np.arange(10),
+    #            images=images,
+    #            DESCR=descr)
+    print 'Loaded DHFR graph dataset for  graph classification from:'
+    print 'Neumann, M., Garnett R., Bauckhage Ch., Kersting K.: Propagation Kernels: Efficient Graph' 
+    print 'Kernels from Propagated Information. MLJ 2015.'
+    return Bunch(graphs=[i for i in g_it],
+    target=_target,
+    labels=True,
+    veclabels=True)
+    
+def load_graphs_PROTEINS_full():
+    """Load the PROTEINS_full graph dataset for graph classification from:
+        Neumann, M., Garnett R., Bauckhage Ch., Kersting K.: Propagation Kernels: Efficient Graph 
+        Kernels from Propagated Information. Under review at MLJ.
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/PROTEINS_full_graph_labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/PROTEINS_full.gspan'
+    #input_target_url='datasets/ENZYMES.labels'  
+    #input_data_url='datasets/ENZYMES.gspan'
+    
+    _target=load_target(input_target_url)
+    g_it=instance_to_graph(input = input_data_url) #url
+    #return Bunch(data=flat_data,
+    #            target=target.astype(np.int),
+    #           target_names=np.arange(10),
+    #            images=images,
+    #            DESCR=descr)
+    print 'Loaded PROTEINS_full graph dataset for  graph classification from:'
+    print 'Neumann, M., Garnett R., Bauckhage Ch., Kersting K.: Propagation Kernels: Efficient Graph' 
+    print 'Kernels from Propagated Information. MLJ 2015.'
+    return Bunch(graphs=[i for i in g_it],
+    target=_target,
+    labels=True,
+    veclabels=True)
