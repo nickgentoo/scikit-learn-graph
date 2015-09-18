@@ -1,9 +1,9 @@
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '',''))
 import numpy as np
-from skgraph import datasets
+#from skgraph import datasets
 from sklearn import svm
-from skgraph.ioskgraph import *
+#from skgraph.ioskgraph import *
 from math import sqrt
 import sys
 #"sys.path.append('..\\..\\Multiple Kernel Learning\\Framework')"
@@ -21,8 +21,12 @@ kmgood=km[:,1:].todense()
 gram=km[:,1:].todense()
 for i in xrange(len(target_array)):
     for j in xrange(0,len(target_array)):
-        print i,j,kmgood[i,j],kmgood[i,i],kmgood[j,j]
-        gram[i,j]=kmgood[i,j]/sqrt(kmgood[i,i]*kmgood[j,j])
+        #print i,j,kmgood[i,j],kmgood[i,i],kmgood[j,j]
+	if kmgood[i,i]*kmgood[j,j]==0:
+		print "WARNING: avoided divizion by zero"
+		gram[i,j]=0
+	else:
+        	gram[i,j]=kmgood[i,j]/sqrt(kmgood[i,i]*kmgood[j,j])
 #print gram
 from sklearn import cross_validation
 for rs in range(42,53):

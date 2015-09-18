@@ -1,3 +1,9 @@
+Calculate the kernel matrices in libsvm format for WL|ODDST|NSPDK kernel on CAS|CPDB|AIDS|NCI1|GDD datasets
+
+python -m scripts/calculate_matrix_allkernels CAS|CPDB|AIDS|NCI1|GDD height lambda output.libsvm WL|ODDST|NSPDK
+
+
+
 To execute the two exampleson the bursi dataset:
     
     python ODDKernel_example.py datasets/bursi.gspan datasets/bursi.target 
