@@ -152,6 +152,27 @@ def load_graphs_NCI1():
     target=_target,
     labels=True,
     veclabels=False)
+
+def load_graphs_NCI109():
+    """Load the NCI109 graph dataset for graph classification..
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/NCI109/NCI109_labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/NCI109/NCI109_graphs.gspan'
+    _target=load_target(input_target_url)
+    g_it=instance_to_graph(input = input_data_url)
+
+    print 'Loaded NCI109 graph dataset for graph classification.'
+    return Bunch(graphs=[i for i in g_it],
+    target=_target,
+    labels=True,
+    veclabels=False)
         
 def load_graphs_bursi():
     """Load the Bursi graph dataset for graph classification..

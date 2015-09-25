@@ -19,23 +19,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
-from skgraph.kernel import ODDSTGraphKernel
-
-class ODDSTVectorizer():
+from skgraph.kernel import WLGraphKernel
+from sklearn.preprocessing import normalize
+class WLVectorizer():
     """
     Transforms labeled, weighted, nested graphs in sparse 
     vectors using ODDST graph kernel representation.
     """
-    def __init__(self, r = 3, l = 1, normalization = True):
-                         self.vectObject=ODDSTGraphKernel.ODDSTGraphKernel(
+    def __init__(self, r = 3, normalization = True):
+                         self.vectObject=WLGraphKernel.WLGraphKernel(
                                            r ,
-                                           l ,
                                            normalization)
+                         self.normalization=normalization
 
     def transform(self, G_list):
+        #Transform returns a sparse matrix of feature vectors not normalized
          return self.vectObject.transform(G_list)
-         
-    
+#         if self.normalization:
+#             ve = normalize(ve, norm='l2', axis=1)
+#         return ve
+            
 """
         Parameters
         ----------

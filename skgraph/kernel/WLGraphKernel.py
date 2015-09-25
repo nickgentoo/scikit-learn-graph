@@ -34,9 +34,11 @@ License:
 import numpy as np
 import networkx as nx
 import copy
+import math
 from KernelTools import convert_to_sparse_matrix
 from graphKernel import GraphKernel
 from scipy.sparse import dok_matrix
+from sklearn.preprocessing import normalize
 
 class WLGraphKernel(GraphKernel):
     """
@@ -100,8 +102,8 @@ class WLGraphKernel(GraphKernel):
                 
                 feature=self.__fsfeatsymbol+str(label_lookup[graph_list[i].node[j]['label']])
                 if not phi.has_key((i,feature)):
-                    phi[(i,feature)]=0
-                phi[(i,feature)]+=1
+                    phi[(i,feature)]=0.0
+                phi[(i,feature)]+=1.0
         
         ### MAIN LOOP
         it = 0
@@ -131,14 +133,17 @@ class WLGraphKernel(GraphKernel):
                         
                     feature=self.__fsfeatsymbol+str(NewNodeIdToLabelId[i][j])
                     if not phi.has_key((i,feature)):
-                        phi[(i,feature)]=0
-                    phi[(i,feature)]+=1
+                        phi[(i,feature)]=0.0
+                    phi[(i,feature)]+=1.0
                     
             
             NodeIdToLabelId = copy.deepcopy(NewNodeIdToLabelId) #update current labels id
             it = it + 1
-        
-        return convert_to_sparse_matrix(phi)
+            
+        ve=convert_to_sparse_matrix(phi)    
+        if self.normalization:
+             ve = normalize(ve, norm='l2', axis=1)
+        return ve
 #    def transform(self, graph_list):
 #        """
 #        TODO
@@ -337,25 +342,25 @@ class WLGraphKernel(GraphKernel):
 #            NodeIdToLabelId = copy.deepcopy(NewNodeIdToLabelId)
 #            it = it + 1
 #        return convert_to_sparse_matrix(phi)
-            
-    def __normalization(self, gram):
-        """
-        TODO
-        """
-        if self.normalization:
-            diagonal=np.diag(gram)
-            a=np.tile(diagonal,(gram.shape[0],1))
-            b=diagonal.reshape((gram.shape[0],1))
-            b=np.tile(b,(1,gram.shape[1]))
-            
-            return gram/np.sqrt(a*b)
-        else :
-            return gram
+
+#    def __normalization(self, gram):
+#        """
+#        TODO
+#        """
+#        if self.normalization:
+#            diagonal=np.diag(gram)
+#            a=np.tile(diagonal,(gram.shape[0],1))
+#            b=diagonal.reshape((gram.shape[0],1))
+#            b=np.tile(b,(1,gram.shape[1]))
+#            
+#            return gram/np.sqrt(a*b)
+#        else :
+#            return gram
     def computeKernelMatrixTrain(self,Graphs):
         return self.computeGram(Graphs)   
     def computeGram(self,g_it,precomputed=None):
         if precomputed is None:
             precomputed=self.transform(g_it)
-        return self.__normalization(precomputed.dot(precomputed.T).todense()).tolist()
+        return precomputed.dot(precomputed.T).todense().tolist()
 
 
