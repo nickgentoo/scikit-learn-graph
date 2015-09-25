@@ -107,7 +107,7 @@ class WLGraphKernel(GraphKernel):
         it = 0
         NewNodeIdToLabelId = copy.deepcopy(NodeIdToLabelId) #labels id of nex iteration
         
-        while it <= self.h: #each iteration compute the next labellings (that are contexts of the previous)
+        while it < self.h: #each iteration compute the next labellings (that are contexts of the previous)
             label_lookup = {}
 
             for i in range(n): #for each graph
