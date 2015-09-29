@@ -58,6 +58,9 @@ if __name__=='__main__':
     elif dataset=="NCI109":
         print "Loading NCI109 dataset"        
         g_it=load_graph_datasets.load_graphs_NCI109()
+    elif dataset=="NCI123":
+        print "Loading NCI123 dataset"        
+        g_it=load_graph_datasets.load_graphs_NCI123()
     else:
         print "Unknown dataset name"
      
