@@ -38,7 +38,7 @@ import math
 from KernelTools import convert_to_sparse_matrix
 from graphKernel import GraphKernel
 from scipy.sparse import dok_matrix
-from sklearn.preprocessing import normalize
+from sklearn import preprocessing as pp
 
 class WLGraphKernel(GraphKernel):
     """
@@ -142,7 +142,7 @@ class WLGraphKernel(GraphKernel):
             
         ve=convert_to_sparse_matrix(phi)    
         if self.normalization:
-             ve = normalize(ve, norm='l2', axis=1)
+             ve = pp.normalize(ve, norm='l2', axis=1)
         return ve
 #    def transform(self, graph_list):
 #        """
