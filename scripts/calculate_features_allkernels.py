@@ -38,7 +38,7 @@ if __name__=='__main__':
     name=str(sys.argv[4])
     kernel=sys.argv[5]
     #FIXED PARAMETERS
-    normalization=True   
+    normalization=True
     
     if dataset=="CAS":
         print "Loading bursi(CAS) dataset"        
@@ -58,6 +58,9 @@ if __name__=='__main__':
     elif dataset=="NCI109":
         print "Loading NCI109 dataset"        
         g_it=load_graph_datasets.load_graphs_NCI109()
+    elif dataset=="NCI123":
+        print "Loading NCI123 dataset"        
+        g_it=load_graph_datasets.load_graphs_NCI123()
     else:
         print "Unknown dataset name"
      
@@ -92,5 +95,5 @@ if __name__=='__main__':
     print "Saving Features in svmlight format in", name+".svmlight"
     #print GMsvm
     from sklearn import datasets
-    datasets.dump_svmlight_file(features,g_it.target, name+".svmlight")
+    datasets.dump_svmlight_file(features,g_it.target, name+".svmlight", zero_based=False)
     #print GM

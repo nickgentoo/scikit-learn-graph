@@ -424,3 +424,26 @@ def load_graphs_PROTEINS_full():
     target=_target,
     labels=True,
     veclabels=True)
+
+def load_graphs_NCI123():
+    """Load the NCI123 graph dataset for graph classification..
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/Leukemia/leukemia_labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/Leukemia/leukemia.smile'
+    _target=load_target(input_target_url)
+    g_it=obabel_to_eden(input = input_data_url,file_type ='can')
+
+    gra=[i for i in g_it]
+    print 'Loaded NCI123 graph dataset for graph classification.'
+    print len(gra),'graphs.'
+    return Bunch(graphs=gra,
+    target=_target,
+    labels=True,
+    veclabels=False)
