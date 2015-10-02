@@ -126,29 +126,38 @@ class WLCGraphKernel(GraphKernel):
             NodeIdToLabelId = copy.deepcopy(NewNodeIdToLabelId) #update current labels id
             it = it + 1
         
-        return convert_to_sparse_matrix(phi)
+        return self.__normalization(phi)
             
-    def __normalization(self, gram):
+    def __normalization(self, feature_list):
         """
-        TODO
+        Private method that normalize the feature vector if requested
+        @type feature_list: Dictionary
+        @param feature_list: Dictionary that represent the feature vector
+        
+        @rtype: Dictionary
+        @return: The normalized feature vector
         """
         if self.normalization:
-            diagonal=np.diag(gram)
-            a=np.tile(diagonal,(gram.shape[0],1))
-            b=diagonal.reshape((gram.shape[0],1))
-            b=np.tile(b,(1,gram.shape[1]))
-            
-            return gram/np.sqrt(a*b)
-        else :
-            return gram
+            total_norm = 0.0
         
+            for value in feature_list.itervalues():
+                total_norm += value*value
+            
+            normalized_feature_vector = {}
+            sqrt_total_norm = math.sqrt( float(total_norm) )
+            for (key,value) in feature_list.iteritems():
+                normalized_feature_vector[key] = value/sqrt_total_norm
+            return normalized_feature_vector
+        else :
+            return dict(feature_list)
+
     def computeGram(self,g_it,precomputed=None):
         if precomputed is None:
             precomputed=self.transform(g_it)
-        return self.__normalization(precomputed.dot(precomputed.T).todense())
+        return precomputed.dot(precomputed.T).todense().tolist()
 
     def computeKernelMatrixTrain(self,Graphs):
-        return self.computeGram(Graphs)   
+        return self.computeGram(Graphs)
     
 # if __name__=='__main__': #TODO converti in test
 #     #g=nx.Graph()

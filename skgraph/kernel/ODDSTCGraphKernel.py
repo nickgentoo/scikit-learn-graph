@@ -80,10 +80,13 @@ class ODDSTCGraphKernel(GraphKernel):
             return self.getFeaturesNoCollisions(G_orig)
         
     def __transform_explicit(self, instance_id, G_orig, approximated=True):
+        feature_list = {}
         if approximated:
-            return {(instance_id,k):v for (k,v) in self.getFeaturesApproximatedExplicit(G_orig).items()}
+            feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesApproximatedExplicit(G_orig).items()})
         else:
-            return {(instance_id,k):v for (k,v) in self.getFeaturesNoCollisionsExplicit(G_orig).items()}
+            feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesNoCollisionsExplicit(G_orig).items()})
+
+        return self.__normalization(feature_list)
         
     def __transform_serial(self, G_list, approximated=True):
         """
@@ -109,7 +112,7 @@ class ODDSTCGraphKernel(GraphKernel):
         for instance_id, G in enumerate(G_list):
             if self.show:
                 drawGraph(G)
-            list_dict.update(self.__transform_explicit(instance_id,G, approximated))
+            list_dict.update(self.__transform_explicit(instance_id, G, approximated))
         
         return convert_to_sparse_matrix(list_dict)
     
@@ -555,24 +558,33 @@ class ODDSTCGraphKernel(GraphKernel):
             
         return Dict_features
     
-    def __normalization(self, gram):
+    def __normalization(self, feature_list):
         """
-        TODO
+        Private method that normalize the feature vector if requested
+        @type feature_list: Dictionary
+        @param feature_list: Dictionary that represent the feature vector
+        
+        @rtype: Dictionary
+        @return: The normalized feature vector
         """
         if self.normalization:
-            diagonal=np.diag(gram)
-            a=np.tile(diagonal,(gram.shape[0],1))
-            b=diagonal.reshape((gram.shape[0],1))
-            b=np.tile(b,(1,gram.shape[1]))
+            total_norm = 0.0
+        
+            for value in feature_list.itervalues():
+                total_norm += value*value
             
-            return gram/np.sqrt(a*b)
+            normalized_feature_vector = {}
+            sqrt_total_norm = math.sqrt( float(total_norm) )
+            for (key,value) in feature_list.iteritems():
+                normalized_feature_vector[key] = value/sqrt_total_norm
+            return normalized_feature_vector
         else :
-            return gram
-    
+            return dict(feature_list)
+
     def computeGramExplicit(self, g_it, approx=True, precomputed=None):
         if precomputed is None:
             precomputed=self.transform_serial_explicit(g_it, approximated=approx)
-        return self.__normalization(precomputed.dot(precomputed.T).todense())
+        return precomputed.dot(precomputed.T).todense().tolist()
     
     def computeGram(self, g_it, jobs=1, approx=True, precomputed=None):
         """
@@ -598,7 +610,7 @@ class ODDSTCGraphKernel(GraphKernel):
                 gram[i,j]=self.computeScore(precomputed[i], precomputed[j])
                 gram[j,i]=gram[i,j]
                 
-        return self.__normalization(gram)     
+        return gram     
     
     def computeScore(self, Graph1, Graph2, poly=None):
         """
@@ -647,7 +659,7 @@ class ODDSTCGraphKernel(GraphKernel):
         return self.computeScore(listgraphdecompositions[0], listgraphdecompositions[1])
     
     def computeKernelMatrixTrain(self,Graphs):
-        return self.computeGram(Graphs)   
+        return self.computeGramExplicit(Graphs)   
 
 # if __name__=='__main__': #TODO converti in test
 #     g=nx.Graph()
