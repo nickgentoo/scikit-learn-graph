@@ -21,9 +21,11 @@ along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import sys
+# import time
 from skgraph.kernel.WLGraphKernel import WLGraphKernel
 from skgraph.kernel.ODDSTGraphKernel import ODDSTGraphKernel
 from skgraph.kernel.NSPDKGraphKernel import NSPDKGraphKernel
+from skgraph.kernel.ODDSTPGraphKernel import ODDSTPGraphKernel
 from skgraph.kernel.WLCGraphKernel import WLCGraphKernel
 from skgraph.kernel.ODDSTCGraphKernel import ODDSTCGraphKernel
 from skgraph.kernel.ODDSTPCGraphKernel import ODDSTPCGraphKernel
@@ -73,6 +75,9 @@ if __name__=='__main__':
     elif kernel=="ODDST":
         print "Using ST kernel"
         ODDkernel=ODDSTGraphKernel(r=max_radius,l=la,normalization=normalization)
+    elif kernel=="ODDSTP":
+        print "Using ST+ kernel"
+        ODDkernel=ODDSTPGraphKernel(r=max_radius,l=la,normalization=normalization)
     elif kernel=="NSPDK":
         print "Using NSPDK kernel, lambda parameter interpreted as d"
         ODDkernel=NSPDKGraphKernel(r=max_radius,d=int(la),normalization=normalization)
@@ -104,6 +109,9 @@ if __name__=='__main__':
 #    datasets.dump_svmlight_file(np.array(GMsvm),g_it.target, name+".svmlight")
 #    #Test manual dump
 
+    # tt = time.time()
+    # tc = time.clock()
+
     print "Saving Gram matrix"
     output=open(name+".svmlight","w")
     for i in xrange(len(GM)):
@@ -113,7 +121,11 @@ if __name__=='__main__':
         output.write("\n")
 
     output.close()
-    #print GMsvm
+
+    # print GMsvm
     # from sklearn import datasets
-    #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
-    #print GM
+    # datasets.dump_svmlight_file(GM, g_it.target, name+".svmlight")
+
+    # print(time.time()-tt, time.clock()-tc)
+    # print GM
+
