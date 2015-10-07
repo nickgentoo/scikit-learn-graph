@@ -12,10 +12,13 @@ from sklearn import linear_model
 
 #"sys.path.append('..\\..\\Multiple Kernel Learning\\Framework')"
 if len(sys.argv)<4:
-    sys.exit("python cross_validation_from_matrix_norm.py features.libsvm C outfile")
+    sys.exit("python cross_validation_from_matrix_norm.py features.libsvm C outfile [class_weight:auto]")
 
 c=float(sys.argv[2])
-
+auto_weight=False
+if len(sys.argv)==5:
+    if sys.argv[4]=="auto":
+     auto_weight=True
 ##TODO read from libsvm format
 from sklearn.datasets import load_svmlight_file
 features, target_array = load_svmlight_file(sys.argv[1])
@@ -42,7 +45,13 @@ for rs in range(42,53):
     
         #generated train and test lists, incuding indices of the examples in training/test
         #for the specific fold. Indices starts from 0 now
-        clf = svm.LinearSVC(C=c,dual=True) #, class_weight='auto'
+        if auto_weight==False:
+            clf = svm.LinearSVC(C=c,dual=True) #, class_weight='auto'
+        else:
+            print "Class weights automatically assigned from training data"
+            clf = svm.LinearSVC(C=c,dual=True, class_weight='auto')
+
+            
         #clf = svm.SVC(C=c,probability=True, class_weight='auto',kernel='linear') #,probability=True,
         #clf = linear_model.LogisticRegression(C=c, dual=True, class_weight='auto')#, solver='liblinear'
         #generate train features and test features
