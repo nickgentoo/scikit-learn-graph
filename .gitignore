@@ -60,3 +60,4 @@ target/
 datasets/
 tags
 *.svmlight
+*_cache.sqlite

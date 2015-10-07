@@ -22,7 +22,11 @@ You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 import requests
+import requests_cache
 import numpy as np
+
+requests_cache.install_cache('sklearn_cache')
+
 def read(uri):
     """
     Abstract read function. EDeN can accept a URL, a file path and a python list.
