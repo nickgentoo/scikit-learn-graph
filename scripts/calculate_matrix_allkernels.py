@@ -29,6 +29,8 @@ from skgraph.kernel.ODDSTPGraphKernel import ODDSTPGraphKernel
 from skgraph.kernel.WLCGraphKernel import WLCGraphKernel
 from skgraph.kernel.ODDSTCGraphKernel import ODDSTCGraphKernel
 from skgraph.kernel.ODDSTPCGraphKernel import ODDSTPCGraphKernel
+from skgraph.kernel.WLDDKGraphKernel import WLDDKGraphKernel
+from skgraph.kernel.WLNSDDKGraphKernel import WLNSDDKGraphKernel
 
 from skgraph.datasets import load_graph_datasets
 import numpy as np
@@ -43,6 +45,7 @@ if __name__=='__main__':
     njobs=1
     name=str(sys.argv[4])
     kernel=sys.argv[5]
+    iterations=int(sys.argv[6])
     #FIXED PARAMETERS
     normalization=True   
     
@@ -91,6 +94,12 @@ if __name__=='__main__':
         print "Lambda ignored"
         print "Using WL fast subtree kernel with contexts"
         ODDkernel=WLGraphKernel(r=max_radius,normalization=normalization)
+    elif kernel=="WLDDK":
+        print "Using ST base kernel with WL kernel"
+        ODDkernel=WLDDKGraphKernel(k=max_radius,h=iterations,l=la,normalization=normalization)
+    elif kernel=="WLNSDDK":
+        print "Using NSDDK base kernel with WL kernel"
+        ODDkernel=WLNSDDKGraphKernel(k=max_radius,h=iterations,l=la,normalization=normalization)
     else:
         print "Unrecognized kernel"
        

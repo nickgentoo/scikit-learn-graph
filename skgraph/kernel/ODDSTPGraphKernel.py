@@ -129,6 +129,7 @@ class ODDSTPGraphKernel(GraphKernel):
         print "TODO __transform_parallel"
         pass
     
+    # TODO still with contexts
     def getFeaturesApproximated(self,G):#TODO usa xxhash lib con bitsize settabile
         """
         Public method that given a networkx graph G will create the dictionary representing its features according to the ST Kernel.
@@ -246,6 +247,7 @@ class ODDSTPGraphKernel(GraphKernel):
         
         return Dict_features
     
+    # TODO still with contexts
     def getFeaturesNoCollisions(self,G):
         """
         Public method that given a networkx graph G will create the dictionary representing its features according to the ST Kernel
