@@ -447,3 +447,24 @@ def load_graphs_NCI123():
     target=_target,
     labels=True,
     veclabels=False)
+
+def load_graphs_NCI_AIDS():
+    """Load the NCI antiHIV graph dataset for graph classification..
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/NCI_AIDS/AIDO99SD_numeric.labels'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/NCI_AIDS/AIDO99SD.gspan'
+    _target=load_target(input_target_url)
+    g_it=instance_to_graph(input = input_data_url)
+
+    print 'Loaded NCI antiHIV dataset graph dataset for graph classification.'
+    return Bunch(graphs=[i for i in g_it],
+    target=_target,
+    labels=True,
+    veclabels=False)
