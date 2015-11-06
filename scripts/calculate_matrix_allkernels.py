@@ -30,7 +30,7 @@ from skgraph.kernel.WLCGraphKernel import WLCGraphKernel
 from skgraph.kernel.ODDSTCGraphKernel import ODDSTCGraphKernel
 from skgraph.kernel.ODDSTPCGraphKernel import ODDSTPCGraphKernel
 from skgraph.kernel.WLDDKGraphKernel import WLDDKGraphKernel
-from skgraph.kernel.WLNSDDKGraphKernel import WLNSDDKGraphKernel
+from skgraph.kernel.WLNSKGraphKernel import WLNSKGraphKernel
 
 from skgraph.datasets import load_graph_datasets
 import numpy as np
@@ -97,9 +97,9 @@ if __name__=='__main__':
     elif kernel=="WLDDK":
         print "Using ST base kernel with WL kernel"
         ODDkernel=WLDDKGraphKernel(k=max_radius,h=iterations,l=la,normalization=normalization)
-    elif kernel=="WLNSDDK":
-        print "Using NSDDK base kernel with WL kernel"
-        ODDkernel=WLNSDDKGraphKernel(k=max_radius,h=iterations,l=la,normalization=normalization)
+    elif kernel=="WLNSK":
+        print "Using NS base kernel with WL kernel"
+        ODDkernel=WLNSKGraphKernel(k=max_radius,h=iterations,l=la,normalization=normalization)
     else:
         print "Unrecognized kernel"
        

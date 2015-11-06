@@ -52,6 +52,16 @@ def drawGraph(G,indexroot=-1):
         nx.draw_networkx_nodes(G,pos1, nodelist=[indexroot], node_color='b', node_size=500)
     pylab.show()
 
+def drawRootedDAG(g):
+    labels=dict((n,d['label']) for n,d in g.nodes(data=True))
+    labels={k:str(k)+':'+v for (k,v) in labels.items()}
+    nx.write_dot(g, 'tmp.dot')
+    pos = nx.graphviz_layout(g, prog='dot')
+
+    # same layout using matplotlib with no labels
+    nx.draw(g, pos, labels=labels)
+    pylab.show()
+
 def generateDAG(G,index_start_node,height):
     """
     Given a Networkx graph G, an integer node index and an integer height returns the correspondent Decompositional DAG
