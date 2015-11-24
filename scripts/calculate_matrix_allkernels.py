@@ -37,7 +37,7 @@ import numpy as np
 
 if __name__=='__main__':
     if len(sys.argv)<1:
-        sys.exit("python ODDKernel_example.py dataset r l filename kernel")
+        sys.exit("python ODDKernel_example.py dataset r l filename kernel [h]")
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
@@ -45,7 +45,11 @@ if __name__=='__main__':
     njobs=1
     name=str(sys.argv[4])
     kernel=sys.argv[5]
-    iterations=int(sys.argv[6])
+
+    # h parameter for WLNSK
+    if len(sys.argv) > 6:
+        iterations = int(sys.argv[6])
+
     #FIXED PARAMETERS
     normalization=True   
     
@@ -86,7 +90,7 @@ if __name__=='__main__':
         ODDkernel=NSPDKGraphKernel(r=max_radius,d=int(la),normalization=normalization)
     elif kernel=="ODDSTC":
         print "Using ST kernel with contexts"
-        ODDkernel=ODDSTCGraphKernel(r=max_radius,l=la,normalization=normalization)
+        ODDkernel=ODDSTCGraphKernel(r=max_radius,l=la,normalization=normalization,version=0)
     elif kernel=="ODDSTPC":
         print "Using ST+ kernel with contexts"
         ODDkernel=ODDSTPCGraphKernel(r=max_radius,l=la,normalization=normalization)
@@ -96,10 +100,10 @@ if __name__=='__main__':
         ODDkernel=WLGraphKernel(r=max_radius,normalization=normalization)
     elif kernel=="WLDDK":
         print "Using ST base kernel with WL kernel"
-        ODDkernel=WLDDKGraphKernel(k=max_radius,h=iterations,l=la,normalization=normalization)
+        ODDkernel=WLDDKGraphKernel(r=max_radius,h=iterations,l=la,normalization=normalization)
     elif kernel=="WLNSK":
         print "Using NS base kernel with WL kernel"
-        ODDkernel=WLNSKGraphKernel(k=max_radius,h=iterations,l=la,normalization=normalization)
+        ODDkernel=WLNSKGraphKernel(r=max_radius,h=iterations,l=la,normalization=normalization)
     else:
         print "Unrecognized kernel"
        

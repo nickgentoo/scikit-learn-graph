@@ -96,9 +96,9 @@ def test_oddstp_graph_kernel():
 
 def test_wlddk_graph_kernel():
     return
-    calculated_gram = np.loadtxt("skgraph/tests/testdata/bursi.gspan.mtx.WLDDK")
+    calculated_gram = np.loadtxt("skgraph/tests/testdata/wlddk.gram")
 
-    k = WLDDKGraphKernel(r = 3, l = 1, normalization = True)
+    k = WLDDKGraphKernel(r = 3, h = 2, l = 1, normalization = True)
     gram = k.computeKernelMatrixTrain(toys)
 
     assert_true(np.allclose(gram, calculated_gram, rtol = 1e-05, atol = 1e-08))
@@ -106,9 +106,9 @@ def test_wlddk_graph_kernel():
 
 def test_wlnsk_graph_kernel():
     return
-    calculated_gram = np.loadtxt("skgraph/tests/testdata/bursi.gspan.mtx.WLNSK")
+    calculated_gram = np.loadtxt("skgraph/tests/testdata/wlnsk.gram")
 
-    k = WLNSKGraphKernel(r = 3, l = 1, normalization = True)
+    k = WLNSKGraphKernel(r = 3, h = 2, l = 1, normalization = True)
     gram = k.computeKernelMatrixTrain(toys)
 
     assert_true(np.allclose(gram, calculated_gram, rtol = 1e-05, atol = 1e-08))

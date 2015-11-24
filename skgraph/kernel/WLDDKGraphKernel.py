@@ -26,9 +26,9 @@ class WLDDKGraphKernel(GraphKernel):
     """
     Fast Subtree kernel with ODDK base kernel.
     """
-    def __init__(self, k, h = 1, l = 1, normalization = False):
+    def __init__(self, r, h = 1, l = 1, normalization = False):
         # depth of "neighborhood" considered
-        self.k = k
+        self.k = r
         self.Lambda = l
 
         # number of iterations of the WL test
@@ -72,19 +72,31 @@ class WLDDKGraphKernel(GraphKernel):
         n = len(graph_list) #number of graphs
         phi={} #dictionary representing the phi vector for each graph. phi[r][c]=v each row is a graph. each column is a feature
 
+        counter = []
+
         for i in range(n): #for each graph            
             r = 1
+            total_feats = {}
 
             while (r < self.k+1):
-                phi.update({(i, k): v for (k, v) in self.getFeaturesApproximated(graph_list[i], r, self.h).items()})
+                current_feats = {(i, k): v for (k, v) in self.getFeaturesApproximated(graph_list[i], r, self.h, counter).items()}
+                for (key,value) in current_feats.iteritems():
+                    if total_feats.get(key) == None:
+                        total_feats[key] = value
+                    else:
+                        total_feats[key] += value
                 r += 1
+
+#            print len(total_feats)
+
+            phi.update(total_feats)
                     
         ve=convert_to_sparse_matrix(phi)    
-        if self.normalization:
-             ve = pp.normalize(ve, norm='l2', axis=1)
+#        if self.normalization:
+#             ve = pp.normalize(ve, norm='l2', axis=1)
         return ve
 
-    def getFeaturesApproximated(self, G, radius, iterations):
+    def getFeaturesApproximated(self, G, radius, iterations, counter):
         """
         Public method that given a networkx graph G will create the dictionary representing its features according to the ST Kernel.
         The computation will use a hash function to encode a feature. There might be collisions
@@ -104,14 +116,11 @@ class WLDDKGraphKernel(GraphKernel):
 
         next_iteration_G = G.copy()
 
+        counter.append(1)
+
         for v in G.nodes():
             if G.node[v]['viewpoint']:
-                if not G.graph['ordered']:
-                    (DAG, maxLevel) = generateDAG(G, v, radius)
-                    #orderDAGvertices(DAG)
-                else:
-                    (DAG, maxLevel) = generateDAGOrdered(G, v, radius)
-            
+                (DAG, maxLevel) = generateDAG(G, v, radius)
                     
                 MapNodeToProductionsID={} #k:list(unsigned)
                 MapNodetoFrequencies={} #k:list(int)
@@ -120,6 +129,7 @@ class WLDDKGraphKernel(GraphKernel):
                     MapNodetoFrequencies[u]=[]
                 MapProductionIDtoSize={} #k:int
         
+                # substitute DAG.successors(u) with G.neighbors(u)
                 reverse_toposort = nx.topological_sort(DAG)[::-1]
                 for u in reverse_toposort:
                     max_child_height=0
@@ -131,7 +141,8 @@ class WLDDKGraphKernel(GraphKernel):
                             
                     for depth in xrange(max_child_height+1):
                         if depth==0:
-                            enc=hash(str(DAG.node[u]['label']))
+#                            enc=hash(str(DAG.node[u]['label']))
+                            enc=str(DAG.node[u]['label'])
                             
                             MapNodeToProductionsID[u].append(enc)
                             
@@ -140,16 +151,19 @@ class WLDDKGraphKernel(GraphKernel):
                                 frequency=maxLevel - DAG.node[u]['depth']
                             
                             if Dict_features.get(enc) is None:
-                                Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
+#                                Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
+                                Dict_features[enc]=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
                             else:
-                                Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+#                                Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+                                Dict_features[enc]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
+#                            print "[iteration: "+ str(iterations) +" | ST depth==0] added feat: \"" + enc + "\""
                             
                             MapNodetoFrequencies[u].append(frequency)
                             MapProductionIDtoSize[enc]=1
 
                             # if u is the last node from the reversed toposort rename it for the next iteration graph
-                            if u == reverse_toposort[-1]:
-                                next_iteration_G.node[u]['label'] = enc
+                            #if (u == v and depth == max_child_height):
+                            #    next_iteration_G.node[u]['label'] = str(enc)
                             
                         else:
                             size=0
@@ -169,14 +183,16 @@ class WLDDKGraphKernel(GraphKernel):
                                 vertex_label_id_list.append(child_hash)
                                 size+=MapProductionIDtoSize[child_hash]
                             
-                            vertex_label_id_list.sort()
-                            encoding+=self.__startsymbol+str(vertex_label_id_list[0])
+                            if len(vertex_label_id_list) > 0:
+                                vertex_label_id_list.sort()
+                                encoding+=self.__startsymbol+str(vertex_label_id_list[0])
                             
-                            for i in range(1,len(vertex_label_id_list)):
-                                encoding+=self.__conjsymbol+str(vertex_label_id_list[i])
-                            
-                            encoding+=self.__endsymbol
-                            encoding=hash(encoding)
+                                for i in range(1,len(vertex_label_id_list)):
+                                    encoding+=self.__conjsymbol+str(vertex_label_id_list[i])
+                                
+                                encoding+=self.__endsymbol
+
+#                            encoding=hash(encoding)
                             
                             MapNodeToProductionsID[u].append(encoding)
                             size+=1
@@ -186,19 +202,44 @@ class WLDDKGraphKernel(GraphKernel):
                             MapNodetoFrequencies[u].append(frequency)
                             
                             if Dict_features.get(encoding) is None:
-                                Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+#                                Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                                Dict_features[encoding]=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
                             else:
-                                Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+#                                Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                                Dict_features[encoding]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
+#                            print "[iteration: "+ str(iterations) +" | ST depth>0] added feat: \"" + encoding + "\""
                             
                             # if u is the last node from the reversed toposort rename it for the next iteration graph
-                            if u == reverse_toposort[-1]:
-                                next_iteration_G.node[u]['label'] = encoding
-                            
-        if (iterations > 0):
-            # recursive call with iterations-1 and relabeled graph
-            # join results with Dict_features
-            Dict_features.update(self.getFeaturesApproximated(next_iteration_G, radius, iterations-1))
+                            #if (u == v):
+                            #    next_iteration_G.node[u]['label'] = str(encoding)
 
+            if iterations > 0:
+                label_set = [G.node[n]['label'] for n in G.neighbors(v)]
+                label_set.sort()
+                new_label = G.node[v]['label']
+                if len(label_set) > 0:
+                    new_label += self.__startsymbol
+                    new_label += self.__conjsymbol.join(label_set)
+                    new_label += self.__endsymbol
+
+                #print new_label
+#                next_iteration_G.node[v]['label'] = str(hash(new_label))
+                next_iteration_G.node[v]['label'] = str(new_label)
+#                drawGraph(next_iteration_G)
+
+        if (iterations > 0):
+            #drawGraph(next_iteration_G)
+            # recursive call with iterations-1 and relabeled graph
+            current_it_features = self.getFeaturesApproximated(next_iteration_G, radius, iterations-1, counter)
+
+            # join results with Dict_features
+            for (key,value) in current_it_features.iteritems():
+                if Dict_features.get(key) == None:
+                    Dict_features[key] = value
+                else:
+                    Dict_features[key] += value
+
+#        print len(Dict_features)
         return Dict_features
 
     def computeKernelMatrixTrain(self,Graphs):

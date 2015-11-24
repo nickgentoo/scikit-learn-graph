@@ -22,13 +22,13 @@ from ..graph.GraphTools import generateDAG
 from ..graph.GraphTools import generateDAGOrdered
 from ..graph.GraphTools import orderDAGvertices
 
-class WLNSDDKGraphKernel(GraphKernel):
+class WLNSKGraphKernel(GraphKernel):
     """
     Fast Subtree kernel with ODDK base kernel.
     """
-    def __init__(self, k, h = 1, l = 1, normalization = False):
+    def __init__(self, r, h = 1, l = 1, normalization = False):
         # depth of "neighborhood" considered
-        self.k = k
+        self.k = r
         self.Lambda = l
 
         # number of iterations of the WL test
@@ -74,10 +74,18 @@ class WLNSDDKGraphKernel(GraphKernel):
 
         for i in range(n): #for each graph            
             r = 1
+            total_feats = {}
 
             while (r < self.k+1):
-                phi.update({(i, k): v for (k, v) in self.getFeaturesApproximated(graph_list[i], r, self.h).items()})
+                current_feats = {(i, k): v for (k, v) in self.getFeaturesApproximated(graph_list[i], r, self.h).items()}
+                for (key,value) in current_feats.iteritems():
+                    if total_feats.get(key) == None:
+                        total_feats[key] = value
+                    else:
+                        total_feats[key] += value
                 r += 1
+
+            phi.update(total_feats)
                     
         ve=convert_to_sparse_matrix(phi)    
         if self.normalization:
@@ -106,11 +114,11 @@ class WLNSDDKGraphKernel(GraphKernel):
 
         for v in G.nodes():
             if G.node[v]['viewpoint']:
-                if not G.graph['ordered']:
-                    (DAG, maxLevel) = generateDAG(G, v, radius)
+#                if not G.graph['ordered']:
+                (DAG, maxLevel) = generateDAG(G, v, radius)
                     #orderDAGvertices(DAG)
-                else:
-                    (DAG, maxLevel) = generateDAGOrdered(G, v, radius)
+#                else:
+#                    (DAG, maxLevel) = generateDAGOrdered(G, v, radius)
             
                     
                 MapNodeToProductionsID={} #k:list(unsigned)
@@ -145,13 +153,14 @@ class WLNSDDKGraphKernel(GraphKernel):
                             # if u is the last node from the reversed toposort
                             # add the feature to the feature dictionary,
                             # rename it for the next iteration graph
-                            if u == reverse_toposort[-1]:
+                            if (u == v):
                                 if Dict_features.get(enc) is None:
                                     Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
                                 else:
                                     Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
                             
-                                next_iteration_G.node[u]['label'] = enc
+#                                if (depth == max_child_height):
+#                                    next_iteration_G.node[u]['label'] = str(enc)
                             
                         else:
                             size=0
@@ -171,13 +180,15 @@ class WLNSDDKGraphKernel(GraphKernel):
                                 vertex_label_id_list.append(child_hash)
                                 size+=MapProductionIDtoSize[child_hash]
                             
-                            vertex_label_id_list.sort()
-                            encoding+=self.__startsymbol+str(vertex_label_id_list[0])
+                            if len(vertex_label_id_list) > 0:
+                                vertex_label_id_list.sort()
+                                encoding+=self.__startsymbol+str(vertex_label_id_list[0])
                             
-                            for i in range(1,len(vertex_label_id_list)):
-                                encoding+=self.__conjsymbol+str(vertex_label_id_list[i])
+                                for i in range(1,len(vertex_label_id_list)):
+                                    encoding+=self.__conjsymbol+str(vertex_label_id_list[i])
                             
-                            encoding+=self.__endsymbol
+                                encoding+=self.__endsymbol
+
                             encoding=hash(encoding)
                             
                             MapNodeToProductionsID[u].append(encoding)
@@ -190,17 +201,37 @@ class WLNSDDKGraphKernel(GraphKernel):
                             # if u is the last node from the reversed toposort
                             # add the feature to the feature dictionary,
                             # rename it for the next iteration graph
-                            if u == reverse_toposort[-1]:
+                            if (u == v):
                                 if Dict_features.get(encoding) is None:
                                     Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
                                 else:
                                     Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                                next_iteration_G.node[u]['label'] = encoding
+
+#                                next_iteration_G.node[u]['label'] = str(encoding)
                             
+                label_set = [G.node[n]['label'] for n in G.neighbors(v)]
+                label_set.sort()
+                new_label = G.node[v]['label']
+                if len(label_set) > 0:
+                    new_label += self.__startsymbol
+                    new_label += self.__conjsymbol.join(label_set)
+                    new_label += self.__endsymbol
+
+                #print new_label
+                next_iteration_G.node[v]['label'] = str(hash(new_label))
+#                drawGraph(next_iteration_G)
+                
         if (iterations > 0):
+            #drawGraph(next_iteration_G)
             # recursive call with iterations-1 and relabeled graph
+            current_it_features = self.getFeaturesApproximated(next_iteration_G, radius, iterations-1)
+
             # join results with Dict_features
-            Dict_features.update(self.getFeaturesApproximated(next_iteration_G, radius, iterations-1))
+            for (key,value) in current_it_features.iteritems():
+                if Dict_features.get(key) == None:
+                    Dict_features[key] = value
+                else:
+                    Dict_features[key] += value
 
         return Dict_features
 
