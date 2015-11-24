@@ -42,6 +42,7 @@ def obabel_to_eden(input, file_type = 'sdf', **options):
         if line.strip():
             l=unicodedata.normalize('NFKD', line).encode('ascii','ignore')
             mol=pybel.readstring(file_type,l)
+            #print mol
             #remove hydrogens
             #mol.removeh()
             G = obabel_to_networkx(mol)
