@@ -92,7 +92,8 @@ class ODDSTPCGraphKernel(GraphKernel):
         else:
             feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesNoCollisionsExplicit(G_orig).items()})
 
-        return self.__normalization(feature_list)
+        return feature_list
+#        return self.__normalization(feature_list)
         
     def __transform_serial(self, G_list, approximated=True):
         """
@@ -121,6 +122,15 @@ class ODDSTPCGraphKernel(GraphKernel):
             list_dict.update(self.__transform_explicit(instance_id,G, approximated))
         
         return convert_to_sparse_matrix(list_dict)
+    
+    def transform_serial_explicit_nomatrix(self, G_list, approximated=False):
+        list_dict={}
+        for instance_id, G in enumerate(G_list):
+            if self.show:
+                drawGraph(G)
+            list_dict.update(self.__transform_explicit(instance_id, G, approximated))
+        
+        return list_dict
     
     def __transform_parallel(self,G_list, n_jobs,approximated=True,keepdictionary=False):
         """
@@ -362,6 +372,9 @@ class ODDSTPCGraphKernel(GraphKernel):
     
     def getFeaturesApproximatedExplicit(self,G):
         Dict_features={}
+        if self.__version==0:
+            ODDK_Dict_features = {}
+
         for v in G.nodes():
             (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
             
@@ -397,14 +410,16 @@ class ODDSTPCGraphKernel(GraphKernel):
                         
                         if self.__version==0:#add oddk feature
                             hashoddk=hash(self.__oddkfeatsymbol+str(enc))
-                            if Dict_features.get(hashoddk) is None:
-                                Dict_features[hashoddk]=0
-                            Dict_features[hashoddk]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+                            if ODDK_Dict_features.get(hashoddk) is None:
+                                ODDK_Dict_features[hashoddk]=0
+#                            ODDK_Dict_features[hashoddk]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+                            ODDK_Dict_features[hashoddk]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
                         
                         if u==v:
                             if Dict_features.get(enc) is None:
                                 Dict_features[enc]=0
-                            Dict_features[enc]+=math.sqrt(self.Lambda)
+#                            Dict_features[enc]+=math.sqrt(self.Lambda)
+                            Dict_features[enc]+=math.tanh(math.sqrt(self.Lambda))
 
                     else:
                         size=0
@@ -445,9 +460,10 @@ class ODDSTPCGraphKernel(GraphKernel):
                         
                         if self.__version==0: #add oddk feature
                             oddkenc=hash(self.__oddkfeatsymbol+str(encoding))
-                            if Dict_features.get(oddkenc) is None:
-                                Dict_features[oddkenc]=0
-                            Dict_features[oddkenc]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            if ODDK_Dict_features.get(oddkenc) is None:
+                                ODDK_Dict_features[oddkenc]=0
+#                            ODDK_Dict_features[oddkenc]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            ODDK_Dict_features[oddkenc]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
                         
                         #add context st feature
                         i=0
@@ -458,12 +474,14 @@ class ODDSTPCGraphKernel(GraphKernel):
                             encodingfin=hash(encodingfin)
                             if Dict_features.get(encodingfin) is None:
                                 Dict_features[encodingfin]=0
-                            Dict_features[encodingfin]+=weight*DAG.node[u]['paths']*(frequency+1)
+#                            Dict_features[encodingfin]+=weight*DAG.node[u]['paths']*(frequency+1)
+                            Dict_features[encodingfin]+=math.tanh(weight)*math.tanh(DAG.node[u]['paths']*(frequency+1))
                             i+=1
                         if u==v:
                             if Dict_features.get(encoding) is None:
                                 Dict_features[encoding]=0
-                            Dict_features[encoding]+=math.sqrt(math.pow(self.Lambda,size))
+#                            Dict_features[encoding]+=math.sqrt(math.pow(self.Lambda,size))
+                            Dict_features[encoding]+=math.tanh(math.sqrt(math.pow(self.Lambda,size)))
                             
                         #extracting features st+
                         if len(vertex_label_id_list)>1: #if there's more than one child
@@ -502,9 +520,10 @@ class ODDSTPCGraphKernel(GraphKernel):
                                     
                                     if self.__version==0: #add oddk st+ feature
                                         oddkenc=hash(self.__oddkfeatsymbol+str(encodingstplus))
-                                        if Dict_features.get(oddkenc) is None:
-                                            Dict_features[oddkenc]=0
-                                        Dict_features[oddkenc]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,sizestplus))
+                                        if ODDK_Dict_features.get(oddkenc) is None:
+                                            ODDK_Dict_features[oddkenc]=0
+#                                        ODDK_Dict_features[oddkenc]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,sizestplus))
+                                        ODDK_Dict_features[oddkenc]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
                                     
                                     #add context st+ features
                                     i=0
@@ -515,14 +534,28 @@ class ODDSTPCGraphKernel(GraphKernel):
                                         encodingfin=hash(encodingfin)
                                         if Dict_features.get(encodingfin) is None:
                                             Dict_features[encodingfin]=0
-                                        Dict_features[encodingfin]+=weight*DAG.node[u]['paths']*(frequency+1)
+#                                        Dict_features[encodingfin]+=weight*DAG.node[u]['paths']*(frequency+1)
+                                        Dict_features[encodingfin]+=math.tanh(weight)*math.tanh(DAG.node[u]['paths']*(frequency+1))
                                         i+=1
                                     if u==v:
                                         if Dict_features.get(encodingstplus) is None:
                                             Dict_features[encodingstplus]=0
-                                        Dict_features[encodingstplus]+=math.sqrt(math.pow(self.Lambda,sizestplus))
+#                                        Dict_features[encodingstplus]+=math.sqrt(math.pow(self.Lambda,sizestplus))
+                                        Dict_features[encodingstplus]+=math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
             
-        return Dict_features
+        if self.__version==0:
+            sdf = self.__normalization(Dict_features) 
+#            sdf = Dict_features
+            osdf = self.__normalization(ODDK_Dict_features) 
+#            osdf = ODDK_Dict_features
+            for (key,value) in osdf.iteritems():
+                sdf[key] = value
+
+#            return sdf
+            return self.__normalization(sdf) 
+        else:
+#            return self.__normalization(Dict_features) 
+            return Dict_features
     
     def getFeaturesNoCollisionsExplicit(self,G):
         Dict_features={}
@@ -569,6 +602,7 @@ class ODDSTPCGraphKernel(GraphKernel):
                             if Dict_features.get(enc) is None:
                                 Dict_features[enc]=0
                             Dict_features[enc]+=math.sqrt(self.Lambda)
+#                            print "[ST depth==0 && u==v] added feat: \"" + enc + "\""
 
                     else:
                         size=0
@@ -622,10 +656,12 @@ class ODDSTPCGraphKernel(GraphKernel):
                                 Dict_features[encodingfin]=0
                             Dict_features[encodingfin]+=weight*DAG.node[u]['paths']*(frequency+1)
                             i+=1
+#                            print "[ST context] added feat: \"" + encodingfin + "\""
                         if u==v:
                             if Dict_features.get(encoding) is None:
                                 Dict_features[encoding]=0
                             Dict_features[encoding]+=math.sqrt(math.pow(self.Lambda,size))
+#                            print "[ST depth>0 & u==v] added feat: \"" + encoding + "\""
                             
                         #extracting features st+
                         if len(vertex_label_id_list)>1: #if there's more than one child
@@ -633,6 +669,7 @@ class ODDSTPCGraphKernel(GraphKernel):
                             #extract ST+ features
                             for j in range(len(successors)):
                                 for l in range(depth):
+#                                    print "*** node (j): " + str(j) + " depth (l): " + str(l) + " ***" 
                                     branches=[]
                                     sizestplus=0
                                     for z in range(len(successors)):
@@ -677,12 +714,22 @@ class ODDSTPCGraphKernel(GraphKernel):
                                             Dict_features[encodingfin]=0
                                         Dict_features[encodingfin]+=weight*DAG.node[u]['paths']*(frequency+1)
                                         i+=1
+#                                        print "[ST+ context] added feat: \"" + encodingfin + "\""
                                     if u==v:
                                         if Dict_features.get(encodingstplus) is None:
                                             Dict_features[encodingstplus]=0
                                         Dict_features[encodingstplus]+=math.sqrt(math.pow(self.Lambda,sizestplus))
+#                                        print "[ST+ u==v] added feat: \"" + encodingstplus + "\""
+
+#                                    print "***"
             
-            print v, len(Dict_features), Dict_features                                    
+#            print "---"
+
+#        for (k,v) in Dict_features.items():
+#            print k+": " + str(v)
+
+#        print len(Dict_features)
+
                                     
         return Dict_features
     

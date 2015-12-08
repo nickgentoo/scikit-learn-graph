@@ -13,6 +13,7 @@ if __name__=='__main__':
     
     gram_file = str(sys.argv[1])
     dataset = str(sys.argv[2])
+
     if len(sys.argv) > 3:
         impl = str(sys.argv[3])
     else:
@@ -29,7 +30,9 @@ if __name__=='__main__':
     # EDeN
 
     if dataset == 'CAS':
+
         ds = load_graph_datasets.load_graphs_bursi()
+
     elif dataset == 'CPDB':
         ds = load_graph_datasets.load_graphs_CPDB()
     elif dataset == 'AIDS':
@@ -38,6 +41,8 @@ if __name__=='__main__':
         ds = load_graph_datasets.load_graphs_NCI1()
 
     y = ds.target
+
+#    print gram_file
 
     clf = svm.SVC(C=10, kernel='precomputed')
     #clf.fit(new_gram, y)
@@ -61,3 +66,18 @@ if __name__=='__main__':
     
     print('AUC ROC: %.4f +- %.4f' % (np.mean(scores),np.std(scores)))
     """
+
+
+#res = {}
+#
+#for g in g_it.graphs:
+#    tmp = ODDkernel.getFeaturesNoCollisionsExplicit(g).items()
+#
+#    for (k,v) in tmp:
+#        if res.get(k) == None:
+#            res[k] = v
+#        else:
+#            res[k] += v
+#
+#
+#plt.plot(res.values()[:100])

@@ -92,7 +92,8 @@ class ODDSTPGraphKernel(GraphKernel):
         else:
             feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesNoCollisionsExplicit(G_orig).items()})
 
-        return self.__normalization(feature_list)
+        return feature_list
+#        return self.__normalization(feature_list)
         
     def __transform_serial(self, G_list, approximated=True):
         """
@@ -373,6 +374,9 @@ class ODDSTPGraphKernel(GraphKernel):
     
     def getFeaturesApproximatedExplicit(self,G):
         Dict_features={}
+        if self.__version == 0:
+            ODDK_Dict_features = {}
+
         for v in G.nodes():
             (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
             
@@ -405,6 +409,13 @@ class ODDSTPGraphKernel(GraphKernel):
                             frequency=maxLevel - DAG.node[u]['depth']
                         
                         MapNodetoFrequencies[u].append(frequency)
+                        
+                        if self.__version==0:#add oddk feature
+                            hashoddk=hash(self.__oddkfeatsymbol+str(enc))
+                            if ODDK_Dict_features.get(hashoddk) is None:
+                                ODDK_Dict_features[hashoddk]=0
+#                            ODDK_Dict_features[hashoddk]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+                            ODDK_Dict_features[hashoddk]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
                         
                         if u == v:
                             frequency = 0
@@ -451,6 +462,13 @@ class ODDSTPGraphKernel(GraphKernel):
                         frequency = min_freq_children
                         MapNodetoFrequencies[u].append(frequency)
 
+                        if self.__version==0: #add oddk feature
+                            oddkenc=hash(self.__oddkfeatsymbol+str(encoding))
+                            if ODDK_Dict_features.get(oddkenc) is None:
+                                ODDK_Dict_features[oddkenc]=0
+#                            ODDK_Dict_features[oddkenc]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            ODDK_Dict_features[oddkenc]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
+                        
                         if u == v:
                             frequency = 0
 
@@ -494,6 +512,13 @@ class ODDSTPGraphKernel(GraphKernel):
                                     
                                     sizestplus+=1
                                     
+                                    if self.__version==0: #add oddk st+ feature
+                                        oddkenc=hash(self.__oddkfeatsymbol+str(encodingstplus))
+                                        if ODDK_Dict_features.get(oddkenc) is None:
+                                            ODDK_Dict_features[oddkenc]=0
+#                                        ODDK_Dict_features[oddkenc]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,sizestplus))
+                                        ODDK_Dict_features[oddkenc]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
+                                    
                                     if u==v:
                                         frequency = 0
 
@@ -501,7 +526,19 @@ class ODDSTPGraphKernel(GraphKernel):
                                         Dict_features[encodingstplus] = 0
                                     Dict_features[encodingstplus] += float(frequency+1.0) * math.sqrt(math.pow(self.Lambda, sizestplus))
             
-        return Dict_features
+        if self.__version==0:
+            sdf = self.__normalization(Dict_features) 
+#            sdf = Dict_features
+            osdf = self.__normalization(ODDK_Dict_features) 
+#            osdf = ODDK_Dict_features
+            for (key,value) in osdf.iteritems():
+                sdf[key] = value
+
+#            return sdf
+            return self.__normalization(sdf) 
+        else:
+#            return self.__normalization(Dict_features) 
+            return Dict_features
     
     def getFeaturesNoCollisionsExplicit(self,G):
         Dict_features={}

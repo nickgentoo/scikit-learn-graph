@@ -25,7 +25,7 @@ import requests
 import requests_cache
 import numpy as np
 
-requests_cache.install_cache('sklearn_cache')
+requests_cache.install_cache('bioinfogen_cache')
 
 def read(uri):
     """
