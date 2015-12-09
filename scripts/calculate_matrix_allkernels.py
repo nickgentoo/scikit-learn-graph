@@ -37,21 +37,33 @@ import numpy as np
 
 if __name__=='__main__':
     if len(sys.argv)<1:
-        sys.exit("python ODDKernel_example.py dataset r l filename kernel [h]")
+        sys.exit("python -m calculate_matrix_allkernels dataset r l filename kernel [normalization] [normalization_type] [h]")
+
+    # mandatory & fixed parameters
+
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
-    #hashs=int(sys.argv[3])
-    njobs=1
     name=str(sys.argv[4])
     kernel=sys.argv[5]
+    njobs=1
 
-    # h parameter for WLNSK
+    # optional parameters
+
+    # normalization as an integer encoded boolean [0|1]
+    normalization = True
     if len(sys.argv) > 6:
-        iterations = int(sys.argv[6])
+        normalization = bool(sys.argv[6])
 
-    #FIXED PARAMETERS
-    normalization=True   
+    # normalization as an integer encoded enum [0|1|...]
+    ntype = 0
+    if len(sys.argv) > 7:
+        iterations = int(sys.argv[7])
+
+    # iteration count for WL extended kernels only, integer
+    iterations = 1
+    if len(sys.argv) > 8:
+        iterations = int(sys.argv[8])
     
     if dataset=="CAS":
         print "Loading bursi(CAS) dataset"        
@@ -81,7 +93,7 @@ if __name__=='__main__':
         ODDkernel=WLGraphKernel(r=max_radius,normalization=normalization)
     elif kernel=="ODDST":
         print "Using ST kernel"
-        ODDkernel=ODDSTGraphKernel(r=max_radius,l=la,normalization=normalization)
+        ODDkernel=ODDSTGraphKernel(r=max_radius,l=la,normalization=normalization,ntype=ntype)
     elif kernel=="ODDSTP":
         print "Using ST+ kernel"
         ODDkernel=ODDSTPGraphKernel(r=max_radius,l=la,normalization=normalization)
