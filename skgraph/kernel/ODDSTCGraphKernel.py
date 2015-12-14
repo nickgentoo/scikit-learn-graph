@@ -17,7 +17,7 @@ import sys
 import numpy as np
 
 class ODDSTCGraphKernel(GraphKernel):
-    def __init__(self, r = 3, l = 1, normalization = True,version=1,show=False):
+    def __init__(self, r =3, l =1, normalization =True, version =1, show=False, ntype =0, nsplit =0):
         """
         Constructor
         @type r: integer number
@@ -35,6 +35,8 @@ class ODDSTCGraphKernel(GraphKernel):
         self.Lambda=l
         self.max_radius=r
         self.normalization=normalization
+        self.normalization_type = ntype
+        self.split_normalization = nsplit
         self.show=show
         self.__startsymbol='!' #special symbols used in encoding
         self.__conjsymbol='#'
@@ -86,7 +88,6 @@ class ODDSTCGraphKernel(GraphKernel):
         else:
             feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesNoCollisionsExplicit(G_orig).items()})
 
-#        return self.__normalization(feature_list)
         return feature_list
         
     def __transform_serial(self, G_list, approximated=True):
@@ -398,18 +399,30 @@ class ODDSTCGraphKernel(GraphKernel):
                         
                         MapNodetoFrequencies[u].append(frequency)
                         
-                        if self.__version==0:#add oddk feature
+                        # add oddk feature
+                        if self.__version==0:
                             hashoddk=hash(self.__oddkfeatsymbol+str(enc))
                             if ODDK_Dict_features.get(hashoddk) is None:
                                 ODDK_Dict_features[hashoddk]=0
-#                            ODDK_Dict_features[hashoddk]+=float(frequency+1.0)*math.sqrt(self.Lambda)
-                            ODDK_Dict_features[hashoddk]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
+
+                            # default weighting:
+                            weight = float(frequency+1.0)*math.sqrt(self.Lambda)
+
+                            # tanh normalization
+                            if self.normalization and self.normalization_type == 1:
+                                weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
+
+                            ODDK_Dict_features[hashoddk] += weight
                         
                         if u==v:
                             if Dict_features.get(enc) is None:
                                 Dict_features[enc]=0
-#                            Dict_features[enc]+=math.sqrt(self.Lambda)
-                            Dict_features[enc]+=math.tanh(math.sqrt(self.Lambda))
+
+                            weight = math.sqrt(self.Lambda)
+                            if self.normalization and self.normalization_type == 1:
+                                weight = math.tanh(math.sqrt(self.Lambda))
+
+                            Dict_features[enc] += weight
 
                     else:
                         size=0
@@ -451,39 +464,65 @@ class ODDSTCGraphKernel(GraphKernel):
                             oddkenc=hash(self.__oddkfeatsymbol+str(encoding))
                             if ODDK_Dict_features.get(oddkenc) is None:
                                 ODDK_Dict_features[oddkenc]=0
-#                            ODDK_Dict_features[oddkenc]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                            ODDK_Dict_features[oddkenc]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
+
+                            weight = float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            if self.normalization and self.normalization_type == 1:
+                                weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
+
+                            ODDK_Dict_features[oddkenc] += weight
                         
                         i=0
                         while i<len(vertex_label_id_list):
                             size_child=vertex_label_id_list[i][1]
-                            weight=math.sqrt(math.pow(self.Lambda,size_child))
+                            weight = math.sqrt(math.pow(self.Lambda,size_child))
                             encodingfin=str(vertex_label_id_list[i][0])+self.__contextsymbol+str(encoding)
                             encodingfin=hash(encodingfin)
                             if Dict_features.get(encodingfin) is None:
                                 Dict_features[encodingfin]=0
-#                            Dict_features[encodingfin]+=weight*DAG.node[u]['paths']*(frequency+1)
-                            Dict_features[encodingfin]+=math.tanh(weight*DAG.node[u]['paths'])*math.tanh(frequency+1)
+                            
+                            full_weight = weight*DAG.node[u]['paths']*(frequency+1)
+                            if self.normalization and self.normalization_type == 1:
+                                full_weight = math.tanh(weight*DAG.node[u]['paths'])*math.tanh(frequency+1)
+
+                            Dict_features[encodingfin] += full_weight
                             i+=1
+
                         if u==v:
                             if Dict_features.get(encoding) is None:
                                 Dict_features[encoding]=0
-#                            Dict_features[encoding]+=math.sqrt(math.pow(self.Lambda,size))
-                            Dict_features[encoding]+=math.tanh(math.sqrt(math.pow(self.Lambda,size)))
+
+                            weight = math.sqrt(math.pow(self.Lambda,size))
+                            if self.normalization and self.normalization_type == 1:
+                                weight = math.tanh(math.sqrt(math.pow(self.Lambda,size)))
+
+                            Dict_features[encoding] += weight
 
         if self.__version==0:
-            sdf = self.__normalization(Dict_features) 
-#            sdf = Dict_features
-            osdf = self.__normalization(ODDK_Dict_features) 
-#            osdf = ODDK_Dict_features
+
+            # default case
+            sdf = Dict_features
+            osdf = ODDK_Dict_features
+
+            # override default and apply split normalizatin if required
+            if self.split_normalization:
+                if self.normalization:
+                    sdf = self.__normalization(Dict_features) 
+                    osdf = self.__normalization(ODDK_Dict_features) 
+
+            # merge the two feature dicts
             for (key,value) in osdf.iteritems():
                 sdf[key] = value
 
-#            return sdf
-            return self.__normalization(sdf) 
+            # again if normalization is required perform it (it won't affect the previous split normalization step)
+            if self.normalization:
+                return self.__normalization(sdf) 
+            else:
+                return sdf
         else:
-#            return self.__normalization(Dict_features) 
-            return Dict_features
+            if self.normalization:
+                return self.__normalization(Dict_features)
+            else:
+                return Dict_features
     
     def getFeaturesNoCollisionsExplicit(self,G):
         Dict_features={}
