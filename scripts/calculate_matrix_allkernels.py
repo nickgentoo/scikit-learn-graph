@@ -36,8 +36,8 @@ from skgraph.datasets import load_graph_datasets
 import numpy as np
 
 if __name__=='__main__':
-    if len(sys.argv)<1:
-        sys.exit("python -m calculate_matrix_allkernels dataset r l filename kernel [normalization] [normalization_type] [h]")
+    if len(sys.argv)<2:
+        sys.exit("python -m calculate_matrix_allkernels dataset r l filename kernel [normalization] [version] [norm_split] [normalization_type] [h]")
 
     # mandatory & fixed parameters
 
@@ -55,15 +55,25 @@ if __name__=='__main__':
     if len(sys.argv) > 6:
         normalization = bool(sys.argv[6])
 
-    # normalization as an integer encoded enum [0|1|...]
-    ntype = 0
+    # kernel version as an integer encoded enum [0|1] (default: 1)
+    version = 1
     if len(sys.argv) > 7:
-        iterations = int(sys.argv[7])
+        version = int(sys.argv[7])
+
+    # normalization split as an integer encoded bool [0|1]
+    nsplit = False
+    if len(sys.argv) > 8:
+        nsplit = bool(sys.argv[8])
+
+    # normalization type as an integer encoded enum [0|1|...]
+    ntype = 0
+    if len(sys.argv) > 9:
+        ntype = int(sys.argv[9])
 
     # iteration count for WL extended kernels only, integer
     iterations = 1
-    if len(sys.argv) > 8:
-        iterations = int(sys.argv[8])
+    if len(sys.argv) > 10:
+        iterations = int(sys.argv[10])
     
     if dataset=="CAS":
         print "Loading bursi(CAS) dataset"        
@@ -96,16 +106,16 @@ if __name__=='__main__':
         ODDkernel=ODDSTGraphKernel(r=max_radius,l=la,normalization=normalization,ntype=ntype)
     elif kernel=="ODDSTP":
         print "Using ST+ kernel"
-        ODDkernel=ODDSTPGraphKernel(r=max_radius,l=la,normalization=normalization)
+        ODDkernel=ODDSTPGraphKernel(r=max_radius,l=la,normalization=normalization,ntype=ntype,nsplit=nsplit)
     elif kernel=="NSPDK":
         print "Using NSPDK kernel, lambda parameter interpreted as d"
         ODDkernel=NSPDKGraphKernel(r=max_radius,d=int(la),normalization=normalization)
     elif kernel=="ODDSTC":
         print "Using ST kernel with contexts"
-        ODDkernel=ODDSTCGraphKernel(r=max_radius,l=la,normalization=normalization,version=0)
+        ODDkernel=ODDSTCGraphKernel(r=max_radius,l=la,normalization=normalization,version=version,ntype=ntype,nsplit=nsplit)
     elif kernel=="ODDSTPC":
         print "Using ST+ kernel with contexts"
-        ODDkernel=ODDSTPCGraphKernel(r=max_radius,l=la,normalization=normalization)
+        ODDkernel=ODDSTPCGraphKernel(r=max_radius,l=la,normalization=normalization,version=version,ntype=ntype,nsplit=nsplit)
     elif kernel=="WLC":
         print "Lambda ignored"
         print "Using WL fast subtree kernel with contexts"

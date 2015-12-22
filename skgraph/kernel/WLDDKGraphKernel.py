@@ -151,11 +151,11 @@ class WLDDKGraphKernel(GraphKernel):
                                 frequency=maxLevel - DAG.node[u]['depth']
                             
                             if Dict_features.get(enc) is None:
-#                                Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
-                                Dict_features[enc]=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
+                                Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
+#                                Dict_features[enc]=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
                             else:
-#                                Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
-                                Dict_features[enc]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
+                                Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
+#                                Dict_features[enc]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
 #                            print "[iteration: "+ str(iterations) +" | ST depth==0] added feat: \"" + enc + "\""
                             
                             MapNodetoFrequencies[u].append(frequency)
@@ -202,11 +202,11 @@ class WLDDKGraphKernel(GraphKernel):
                             MapNodetoFrequencies[u].append(frequency)
                             
                             if Dict_features.get(encoding) is None:
-#                                Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                                Dict_features[encoding]=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
+                                Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+#                                Dict_features[encoding]=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
                             else:
-#                                Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                                Dict_features[encoding]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
+                                Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+#                                Dict_features[encoding]+=math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
 #                            print "[iteration: "+ str(iterations) +" | ST depth>0] added feat: \"" + encoding + "\""
                             
                             # if u is the last node from the reversed toposort rename it for the next iteration graph
