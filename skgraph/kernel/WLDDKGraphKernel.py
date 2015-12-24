@@ -92,8 +92,8 @@ class WLDDKGraphKernel(GraphKernel):
             phi.update(total_feats)
                     
         ve=convert_to_sparse_matrix(phi)    
-#        if self.normalization:
-#             ve = pp.normalize(ve, norm='l2', axis=1)
+        if self.normalization:
+             ve = pp.normalize(ve, norm='l2', axis=1)
         return ve
 
     def getFeaturesApproximated(self, G, radius, iterations, counter):
