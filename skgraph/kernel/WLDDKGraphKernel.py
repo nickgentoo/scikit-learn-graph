@@ -141,8 +141,8 @@ class WLDDKGraphKernel(GraphKernel):
                             
                     for depth in xrange(max_child_height+1):
                         if depth==0:
-#                            enc=hash(str(DAG.node[u]['label']))
-                            enc=str(DAG.node[u]['label'])
+                            enc=hash(str(DAG.node[u]['label']))
+#                            enc=str(DAG.node[u]['label'])
                             
                             MapNodeToProductionsID[u].append(enc)
                             
@@ -192,7 +192,7 @@ class WLDDKGraphKernel(GraphKernel):
                                 
                                 encoding+=self.__endsymbol
 
-#                            encoding=hash(encoding)
+                            encoding=hash(encoding)
                             
                             MapNodeToProductionsID[u].append(encoding)
                             size+=1
@@ -223,8 +223,8 @@ class WLDDKGraphKernel(GraphKernel):
                     new_label += self.__endsymbol
 
                 #print new_label
-#                next_iteration_G.node[v]['label'] = str(hash(new_label))
-                next_iteration_G.node[v]['label'] = str(new_label)
+                next_iteration_G.node[v]['label'] = str(hash(new_label))
+#                next_iteration_G.node[v]['label'] = str(new_label)
 #                drawGraph(next_iteration_G)
 
         if (iterations > 0):
