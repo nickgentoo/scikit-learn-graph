@@ -209,6 +209,7 @@ class WLNSKGraphKernel(GraphKernel):
 
 #                                next_iteration_G.node[u]['label'] = str(encoding)
                             
+            if iterations > 0:
                 label_set = [G.node[n]['label'] for n in G.neighbors(v)]
                 label_set.sort()
                 new_label = G.node[v]['label']
