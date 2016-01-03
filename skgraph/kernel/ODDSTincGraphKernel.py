@@ -87,7 +87,10 @@ class ODDSTincGraphKernel(GraphKernel):
             tmpfeats = self.__transform_explicit(instance_id, G, approximated)
             for key in self.kernels:
                 for i, phi in tmpfeats[key].items():
-                    feature_lists[key][i].update(phi)
+                    if i in feature_lists[key].keys():
+                        feature_lists[key][i].update(phi)
+                    else:
+                        feature_lists[key][i] = phi
 
         for key in self.kernels:
             for i, phi in feature_lists[key].items():

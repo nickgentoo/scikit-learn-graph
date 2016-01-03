@@ -18,7 +18,7 @@ import sys
 import numpy as np
 
 class ODDSTPGraphKernel(GraphKernel):
-    def __init__(self, r = 3, l = 1, normalization = True,version=1,show=False):
+    def __init__(self, r = 3, l = 1, normalization = True,version=1,show=False, ntype =0, nsplit =0):
         """
         Constructor
         @type r: integer number
@@ -36,6 +36,8 @@ class ODDSTPGraphKernel(GraphKernel):
         self.Lambda=l
         self.max_radius=r
         self.normalization=normalization
+        self.normalization_type = ntype
+        self.split_normalization = nsplit
         self.show=show
         self.__startsymbol='!' #special symbols used in encoding
         self.__conjsymbol='#'
