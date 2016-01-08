@@ -26,6 +26,7 @@ from ..graph.GraphTools import orderDAGvertices
 from operator import itemgetter
 from ..graph.GraphTools import drawGraph
 from KernelTools import convert_to_sparse_matrix
+from sklearn.preprocessing import normalize
 import networkx as nx
 import math
 import sys
@@ -291,7 +292,13 @@ class ODDSTGraphKernel(GraphKernel):
             feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesApproximated(G_orig,MapEncToId).items()})
         else:
             feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesNoCollisions(G_orig,MapEncToId).items()})
-        return self.__normalization(feature_list)
+        
+#        ve=convert_to_sparse_matrix(feature_list)    
+#        if self.normalization:
+#             ve = normalize(ve, norm='l2', axis=1)
+#        return ve
+#        return self.__normalization(feature_list)
+        return feature_list
         
     def __transform_serial(self, G_list, approximated=True,keepdictionary=False):
         """
@@ -315,10 +322,14 @@ class ODDSTGraphKernel(GraphKernel):
         for instance_id , G in enumerate( G_list ):
             
             feature_dict.update(self.__transform( instance_id, G, approximated, MapEncToId))
-        if keepdictionary:
-            return (convert_to_sparse_matrix( feature_dict, MapEncToId ),feature_dict)
-        else:
-            return convert_to_sparse_matrix( feature_dict, MapEncToId )
+#        if keepdictionary:
+#            return (convert_to_sparse_matrix( feature_dict, MapEncToId ),feature_dict)
+#        else:
+#            return convert_to_sparse_matrix( feature_dict, MapEncToId )
+        ve=convert_to_sparse_matrix(feature_dict)    
+        if self.normalization:
+             ve = normalize(ve, norm='l2', axis=1)
+        return ve
     
     
     def transform(self, G_list, n_jobs = -1, approximated=True, keepdictionary=False):
@@ -330,7 +341,8 @@ class ODDSTGraphKernel(GraphKernel):
         @type n_jobs: integer number
         @param n_jobs: number of parallel jobs
         
-        @type approximated: boolean
+        @type approximated: boolean        mult=1.0
+        if i>13 and i<
         @param approximated: true if use a hash function with probable collisions during feature decomposition. False no collision guaranteed
         
         @type keepdictionary: boolean
@@ -620,12 +632,16 @@ class ODDSTGraphKernel(GraphKernel):
                             
                             frequency = min_freq_children
                             MapNodetoFrequencies[u].append(frequency)
-                            
+
                             if Dict_features.get(encoding) is None:
                                 Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
                             else:
                                 Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                            
+                            #TANH TEST
+#                            if Dict_features.get(encoding) is None:
+#                                Dict_features[encoding]=float(frequency+1.0)*math.sqrt(self.Lambda*size)
+#                            else:
+#                                Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(self.Lambda*size)
                             if not MapEncToId is None:
                                 MapEncToId.addElement(encoding)    
 
