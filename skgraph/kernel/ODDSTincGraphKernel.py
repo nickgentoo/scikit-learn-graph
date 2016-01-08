@@ -14,7 +14,6 @@ import networkx as nx
 import math
 import sys
 import numpy as np
-from cvxopt import matrix
 
 class ODDSTincGraphKernel(GraphKernel):
     def __init__(self, r =3, l =1, normalization =True, version =1, ntype =0, nsplit =0, kernels =[]):
@@ -591,7 +590,7 @@ class ODDSTincGraphKernel(GraphKernel):
         if precomputed is None:
             precomputed = self.transform_serial_explicit(g_it, approximated = approx)
 
-        return [matrix(np.array(p.dot(p.T).todense().tolist())) for p in precomputed]
+        return [np.array(p.dot(p.T).todense().tolist()) for p in precomputed]
 
     def computeKernelMatricesTrain(self, Graphs):
         return self.computeGramsExplicit(Graphs)   
