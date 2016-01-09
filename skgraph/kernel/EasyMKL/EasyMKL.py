@@ -38,7 +38,7 @@ class EasyMKL():
 
 #        start = time.clock()
 
-        k = spmatrix(0.0,(list_K[0].size[0],list_K[0].size[1]))
+        k = matrix(0.0,(list_K[0].size[0],list_K[0].size[1]))
         if weights == None:
             for ker in list_K:
                 k += ker
@@ -81,7 +81,7 @@ class EasyMKL():
         
 #        start = time.clock()
         # Sum of the kernels
-        ker_matrix = spmatrix(self.sum_kernels(self.list_Ktr))
+        ker_matrix = matrix(self.sum_kernels(self.list_Ktr))
 
         YY = matrix(np.diag(list(matrix(labels))))
         KLL = (1.0-self.lam)*YY*ker_matrix*YY
@@ -133,7 +133,7 @@ class EasyMKL():
         
 #        start = time.clock()
         if True:
-            ker_matrix = spmatrix(self.sum_kernels(list_Ktr, self.weights))
+            ker_matrix = matrix(self.sum_kernels(list_Ktr, self.weights))
             YY = matrix(np.diag(list(matrix(labels))))
             
             KLL = (1.0-self.lam)*YY*ker_matrix*YY
@@ -167,6 +167,6 @@ class EasyMKL():
          
         #YY = matrix(np.diag(self.labels).copy())
         YY = matrix(np.diag(list(matrix(self.labels))))
-        ker_matrix = spmatrix(self.sum_kernels(list_Ktest, self.weights))
+        ker_matrix = matrix(self.sum_kernels(list_Ktest, self.weights))
         z = ker_matrix*YY*self.gamma
         return z
