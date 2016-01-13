@@ -92,6 +92,9 @@ class ODDSTincGraphKernel(GraphKernel):
                     else:
                         feature_lists[key][i] = phi
 
+        print "******"
+        print [fl.keys() for fl in feature_lists.values()]
+        print "******"
         for key in self.kernels:
             for i, phi in feature_lists[key].items():
                 feature_matrices.append(convert_to_sparse_matrix(phi))
@@ -132,6 +135,10 @@ class ODDSTincGraphKernel(GraphKernel):
                         max_child_height = child_height
                         
                 for depth in range(max_child_height+1):
+#                    print "==============================="
+#                    print "nodo:", u, "depth:", depth
+#                    print "dagd:", DAG.node[u]['depth'], "m-d:", maxLevel - depth 
+
                     if depth==0:
                         enc=hash(DAG.node[u]['label'])
                             
@@ -144,44 +151,46 @@ class ODDSTincGraphKernel(GraphKernel):
                         
                         MapNodetoFrequencies[u].append(frequency)
                         
-                        if self.__version==0:#add oddk feature
-                            hashoddk=hash(self.__oddkfeatsymbol+str(enc))
-                            if ODDK_Dict_features[depth].get(hashoddk) is None:
-                                ODDK_Dict_features[depth][hashoddk]=0
+                        if DAG.node[u]['depth'] == maxLevel - depth:
+#                            print "--------------------------------------------- YAY"
+                            if self.__version==0:#add oddk feature
+                                hashoddk=hash(self.__oddkfeatsymbol+str(enc))
+                                if ODDK_Dict_features[depth].get(hashoddk) is None:
+                                    ODDK_Dict_features[depth][hashoddk]=0
 
-                            # default weighting:
-                            weight = float(frequency+1.0)*math.sqrt(self.Lambda)
+                                # default weighting:
+                                weight = float(frequency+1.0)*math.sqrt(self.Lambda)
 
-                            # tanh normalization
+                                # tanh normalization
+                                if self.normalization and self.normalization_type == 1:
+                                    weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
+
+                                ODDK_Dict_features[depth][hashoddk] += weight
+                            
+                        if DAG.node[u]['depth'] == maxLevel - depth:
+#                            print "--------------------------------------------- YAY"
+                            weight = math.sqrt(self.Lambda)
                             if self.normalization and self.normalization_type == 1:
-                                weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
+                                weight = math.tanh(math.sqrt(self.Lambda))
 
-                            ODDK_Dict_features[depth][hashoddk] += weight
-                        
-                        
-                        weight = math.sqrt(self.Lambda)
-                        if self.normalization and self.normalization_type == 1:
-                            weight = math.tanh(math.sqrt(self.Lambda))
+                            if 'ODDST' in self.kernels:
+                                if feature_maps['ODDST'][depth].get(enc) is None:
+                                    feature_maps['ODDST'][depth][enc] = 0
+                                feature_maps['ODDST'][depth][enc] += weight
+                            if 'ODDSTP' in self.kernels:
+                                if feature_maps['ODDSTP'][depth].get(enc) is None:
+                                    feature_maps['ODDSTP'][depth][enc] = 0
+                                feature_maps['ODDSTP'][depth][enc] += weight
 
-
-                        if 'ODDST' in self.kernels:
-                            if feature_maps['ODDST'][depth].get(enc) is None:
-                                feature_maps['ODDST'][depth][enc] = 0
-                            feature_maps['ODDST'][depth][enc] += weight
-                        if 'ODDSTP' in self.kernels:
-                            if feature_maps['ODDSTP'][depth].get(enc) is None:
-                                feature_maps['ODDSTP'][depth][enc] = 0
-                            feature_maps['ODDSTP'][depth][enc] += weight
-
-                        if u==v:
-                            if 'ODDSTPC' in self.kernels:
-                                if feature_maps['ODDSTPC'][depth].get(enc) is None:
-                                    feature_maps['ODDSTPC'][depth][enc] = 0
-                                feature_maps['ODDSTPC'][depth][enc] += weight
-                            if 'ODDSTC' in self.kernels:
-                                if feature_maps['ODDSTC'][depth].get(enc) is None:
-                                    feature_maps['ODDSTC'][depth][enc] = 0
-                                feature_maps['ODDSTC'][depth][enc] += weight
+                            if u==v:
+                                if 'ODDSTPC' in self.kernels:
+                                    if feature_maps['ODDSTPC'][depth].get(enc) is None:
+                                        feature_maps['ODDSTPC'][depth][enc] = 0
+                                    feature_maps['ODDSTPC'][depth][enc] += weight
+                                if 'ODDSTC' in self.kernels:
+                                    if feature_maps['ODDSTC'][depth].get(enc) is None:
+                                        feature_maps['ODDSTC'][depth][enc] = 0
+                                    feature_maps['ODDSTC'][depth][enc] += weight
 
                     else:
                         size=0
@@ -220,61 +229,65 @@ class ODDSTincGraphKernel(GraphKernel):
                         frequency = min_freq_children
                         MapNodetoFrequencies[u].append(frequency)
                         
-                        if self.__version==0: #add oddk feature
-                            oddkenc=hash(self.__oddkfeatsymbol+str(encoding))
-                            if ODDK_Dict_features[depth].get(oddkenc) is None:
-                                ODDK_Dict_features[depth][oddkenc]=0
+                        if DAG.node[u]['depth'] == maxLevel - depth:
+#                            print "--------------------------------------------- YAY"
+                            if self.__version==0: #add oddk feature
+                                oddkenc=hash(self.__oddkfeatsymbol+str(encoding))
+                                if ODDK_Dict_features[depth].get(oddkenc) is None:
+                                    ODDK_Dict_features[depth][oddkenc]=0
 
-                            weight = float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                            if self.normalization and self.normalization_type == 1:
-                                weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
+                                weight = float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                                if self.normalization and self.normalization_type == 1:
+                                    weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
 
-                            ODDK_Dict_features[depth][oddkenc] += weight
-                        
+                                ODDK_Dict_features[depth][oddkenc] += weight
+                            
                         # Adds context ST features
-                        i=0
-                        while i<len(vertex_label_id_list):
-                            size_child = vertex_label_id_list[i][1]
-                            weight = math.sqrt(math.pow(self.Lambda, size_child))
-                            encodingfin = str(vertex_label_id_list[i][0])+self.__contextsymbol+str(encoding)
-                            encodingfin = hash(encodingfin)
+                        if DAG.node[u]['depth'] == maxLevel - depth:
+#                            print "--------------------------------------------- YAY"
+                            i=0
+                            while i<len(vertex_label_id_list):
+                                size_child = vertex_label_id_list[i][1]
+                                weight = math.sqrt(math.pow(self.Lambda, size_child))
+                                encodingfin = str(vertex_label_id_list[i][0])+self.__contextsymbol+str(encoding)
+                                encodingfin = hash(encodingfin)
 
-                            full_weight = weight*DAG.node[u]['paths']*(frequency+1)
+                                full_weight = weight*DAG.node[u]['paths']*(frequency+1)
+                                if self.normalization and self.normalization_type == 1:
+                                    full_weight = math.tanh(weight)*math.tanh(DAG.node[u]['paths']*(frequency+1))
+
+                                if 'ODDSTC' in self.kernels:
+                                    if feature_maps['ODDSTC'][depth].get(encodingfin) is None:
+                                        feature_maps['ODDSTC'][depth][encodingfin] = 0
+                                    feature_maps['ODDSTC'][depth][encodingfin] += full_weight
+                                if 'ODDSTPC' in self.kernels:
+                                    if feature_maps['ODDSTPC'][depth].get(encodingfin) is None:
+                                        feature_maps['ODDSTPC'][depth][encodingfin] = 0
+                                    feature_maps['ODDSTPC'][depth][encodingfin] += full_weight
+                                i+=1
+
+                            weight = math.sqrt(math.pow(self.Lambda,size))
                             if self.normalization and self.normalization_type == 1:
-                                full_weight = math.tanh(weight)*math.tanh(DAG.node[u]['paths']*(frequency+1))
+                                weight = math.tanh(math.sqrt(math.pow(self.Lambda,size)))
 
-                            if 'ODDSTC' in self.kernels:
-                                if feature_maps['ODDSTC'][depth].get(encodingfin) is None:
-                                    feature_maps['ODDSTC'][depth][encodingfin] = 0
-                                feature_maps['ODDSTC'][depth][encodingfin] += full_weight
-                            if 'ODDSTPC' in self.kernels:
-                                if feature_maps['ODDSTPC'][depth].get(encodingfin) is None:
-                                    feature_maps['ODDSTPC'][depth][encodingfin] = 0
-                                feature_maps['ODDSTPC'][depth][encodingfin] += full_weight
-                            i+=1
+                            if 'ODDST' in self.kernels:
+                                if feature_maps['ODDST'][depth].get(encoding) is None:
+                                    feature_maps['ODDST'][depth][encoding] = 0
+                                feature_maps['ODDST'][depth][encoding] += weight
+                            if 'ODDSTP' in self.kernels:
+                                if feature_maps['ODDSTP'][depth].get(encoding) is None:
+                                    feature_maps['ODDSTP'][depth][encoding] = 0
+                                feature_maps['ODDSTP'][depth][encoding] += weight
 
-                        weight = math.sqrt(math.pow(self.Lambda,size))
-                        if self.normalization and self.normalization_type == 1:
-                            weight = math.tanh(math.sqrt(math.pow(self.Lambda,size)))
-
-                        if 'ODDST' in self.kernels:
-                            if feature_maps['ODDST'][depth].get(encoding) is None:
-                                feature_maps['ODDST'][depth][encoding] = 0
-                            feature_maps['ODDST'][depth][encoding] += weight
-                        if 'ODDSTP' in self.kernels:
-                            if feature_maps['ODDSTP'][depth].get(encoding) is None:
-                                feature_maps['ODDSTP'][depth][encoding] = 0
-                            feature_maps['ODDSTP'][depth][encoding] += weight
-
-                        if u==v:
-                            if 'ODDSTC' in self.kernels:
-                                if feature_maps['ODDSTC'][depth].get(encoding) is None:
-                                    feature_maps['ODDSTC'][depth][encoding] = 0
-                                feature_maps['ODDSTC'][depth][encoding] += weight
-                            if 'ODDSTPC' in self.kernels:
-                                if feature_maps['ODDSTPC'][depth].get(encoding) is None:
-                                    feature_maps['ODDSTPC'][depth][encoding] = 0
-                                feature_maps['ODDSTPC'][depth][encoding] += weight
+                            if u==v:
+                                if 'ODDSTC' in self.kernels:
+                                    if feature_maps['ODDSTC'][depth].get(encoding) is None:
+                                        feature_maps['ODDSTC'][depth][encoding] = 0
+                                    feature_maps['ODDSTC'][depth][encoding] += weight
+                                if 'ODDSTPC' in self.kernels:
+                                    if feature_maps['ODDSTPC'][depth].get(encoding) is None:
+                                        feature_maps['ODDSTPC'][depth][encoding] = 0
+                                    feature_maps['ODDSTPC'][depth][encoding] += weight
                            
                         # Extracting ST+ features
                         if len(vertex_label_id_list)>1: #if there's more than one child
@@ -311,46 +324,50 @@ class ODDSTincGraphKernel(GraphKernel):
                                     
                                     sizestplus+=1
                                     
-                                    if self.__version==0: #add oddk st+ feature
-                                        oddkenc=hash(self.__oddkfeatsymbol+str(encodingstplus))
-                                        if ODDK_Dict_features[depth].get(oddkenc) is None:
-                                            ODDK_Dict_features[depth][oddkenc]=0
+                                    if DAG.node[u]['depth'] == maxLevel - depth:
+#                                        print "--------------------------------------------- YAY"
+                                        if self.__version==0: #add oddk st+ feature
+                                            oddkenc=hash(self.__oddkfeatsymbol+str(encodingstplus))
+                                            if ODDK_Dict_features[depth].get(oddkenc) is None:
+                                                ODDK_Dict_features[depth][oddkenc]=0
 
-                                        weight = float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,sizestplus))
-                                        if self.normalization and self.normalization_type == 1:
-                                            weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
+                                            weight = float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,sizestplus))
+                                            if self.normalization and self.normalization_type == 1:
+                                                weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
 
-                                        ODDK_Dict_features[depth][oddkenc] += weight
-                                    
+                                            ODDK_Dict_features[depth][oddkenc] += weight
+                                        
                                     # Adds context ST+ features
-                                    i=0
-                                    while i<len(branches):
-                                        size_child=branches[i][1]
-                                        weight=math.sqrt(math.pow(self.Lambda,size_child))
-                                        encodingfin=str(branches[i][0])+self.__contextsymbol+str(encodingstplus)
-                                        encodingfin=hash(encodingfin)
+                                    if DAG.node[u]['depth'] == maxLevel - depth:
+#                                        print "--------------------------------------------- YAY"
+                                        i=0
+                                        while i<len(branches):
+                                            size_child=branches[i][1]
+                                            weight=math.sqrt(math.pow(self.Lambda,size_child))
+                                            encodingfin=str(branches[i][0])+self.__contextsymbol+str(encodingstplus)
+                                            encodingfin=hash(encodingfin)
 
-                                        full_weight = weight*DAG.node[u]['paths']*(frequency+1)
-                                        if self.normalization and self.normalization_type == 1:
-                                            full_weight = math.tanh(weight)*math.tanh(DAG.node[u]['paths']*(frequency+1))
+                                            full_weight = weight*DAG.node[u]['paths']*(frequency+1)
+                                            if self.normalization and self.normalization_type == 1:
+                                                full_weight = math.tanh(weight)*math.tanh(DAG.node[u]['paths']*(frequency+1))
 
-                                        if 'ODDSTPC' in self.kernels:
-                                            if feature_maps['ODDSTPC'][depth].get(encodingfin) is None:
-                                                feature_maps['ODDSTPC'][depth][encodingfin]=0
-                                            feature_maps['ODDSTPC'][depth][encodingfin] += full_weight
+                                            if 'ODDSTPC' in self.kernels:
+                                                if feature_maps['ODDSTPC'][depth].get(encodingfin) is None:
+                                                    feature_maps['ODDSTPC'][depth][encodingfin]=0
+                                                feature_maps['ODDSTPC'][depth][encodingfin] += full_weight
 
-                                        i+=1
+                                            i+=1
 
-                                    if u==v:
-                                        weight = math.sqrt(math.pow(self.Lambda,sizestplus))
-                                        if self.normalization and self.normalization_type == 1:
-                                            weight = math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
+                                        if u==v:
+                                            weight = math.sqrt(math.pow(self.Lambda,sizestplus))
+                                            if self.normalization and self.normalization_type == 1:
+                                                weight = math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
 
-                                        if 'ODDSTP' in self.kernels:
-                                            if feature_maps['ODDSTP'][depth].get(encodingstplus) is None:
-                                                feature_maps['ODDSTP'][depth][encodingstplus]=0
-                                            feature_maps['ODDSTP'][depth][encodingstplus] += weight
- 
+                                            if 'ODDSTP' in self.kernels:
+                                                if feature_maps['ODDSTP'][depth].get(encodingstplus) is None:
+                                                    feature_maps['ODDSTP'][depth][encodingstplus]=0
+                                                feature_maps['ODDSTP'][depth][encodingstplus] += weight
+         
         processed_feat_maps = dict.fromkeys(self.kernels, {})
         if self.__version==0:
 
@@ -382,10 +399,11 @@ class ODDSTincGraphKernel(GraphKernel):
         else:
             for key in self.kernels:
                 for i, phi in feature_maps[key].items():
-                    if self.normalization:
-                        processed_feat_maps[key][i] = self.__normalization(phi)
-                    else:
-                        processed_feat_maps[key][i] = phi
+                    if not len(phi)==0:
+                        if self.normalization:
+                            processed_feat_maps[key][i] = self.__normalization(phi)
+                        else:
+                            processed_feat_maps[key][i] = phi
 
         return processed_feat_maps
     
