@@ -56,7 +56,7 @@ for rs in range(42,53):
     
     #gram=km[:,1:].todense()
     f.write("Total examples "+str(len(gram))+"\n")
-    f.write("|W| \t train_acc \t test_acc\n")
+    f.write("|W| \t train_loss \t test_loss\n")
     #print gram
     # normalization
     from math import sqrt
