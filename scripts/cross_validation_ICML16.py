@@ -45,7 +45,8 @@ def my_custom_loss_func(ground_truth, predictions):
     return total_loss / len(predictions)
 
 from sklearn import cross_validation
-for rs in range(42,53):
+for rs in range(42,43):
+#for rs in range(42,53):
     f=open(str(sys.argv[3]+".seed"+str(rs)+".c"+str(c)),'w')
 
     
@@ -107,11 +108,13 @@ for rs in range(42,53):
         #from sklearn.metrics import accuracy_score
         #predictions on training set
         y_train_predicted=clf.decision_function(X_train)
+        print type( my_custom_loss_func(y_train, y_train_predicted))
         print " training loss ",(str( my_custom_loss_func(y_train, y_train_predicted))), 
-        f.write(str( my_custom_loss_func(y_train, y_train_predicted))+"\t")
+        f.write(str(my_custom_loss_func(y_train, y_train_predicted))+"\t")
 
         # predict on test examples
         y_test_predicted=clf.decision_function(X_test)
+        print y_test.shape, y_test_predicted.shape
         print " test loss ",(str( my_custom_loss_func(y_test, y_test_predicted)))        
         sc.append(my_custom_loss_func(y_test, y_test_predicted))
         f.write(str( my_custom_loss_func(y_test, y_test_predicted))+"\n")
