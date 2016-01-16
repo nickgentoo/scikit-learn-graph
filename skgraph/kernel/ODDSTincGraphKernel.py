@@ -9,7 +9,7 @@ __status__ = "Production"
 from operator import itemgetter
 from graphKernel import GraphKernel
 from ..graph.GraphTools import drawGraph, generateDAG
-from KernelTools import convert_to_sparse_matrix
+from scipy.sparse import csr_matrix
 import networkx as nx
 import math
 import sys
@@ -67,7 +67,9 @@ class ODDSTincGraphKernel(GraphKernel):
             return self.__transform_parallel(G_list, n_jobs,approximated)
      
     def __transform_explicit(self, instance_id, G_orig, approximated =True):
-        feature_lists = dict.fromkeys(self.kernels, {})
+        feature_lists = dict.fromkeys(self.kernels)
+        for key in self.kernels:
+           feature_lists[key] = {}
 
 #        if approximated:
         feature_maps = self.getFeaturesApproximatedExplicit(G_orig)
@@ -81,7 +83,9 @@ class ODDSTincGraphKernel(GraphKernel):
         
     def transform_serial_explicit(self, G_list, approximated =True):
         feature_matrices = []
-        feature_lists = dict.fromkeys(self.kernels, {})
+        feature_lists = dict.fromkeys(self.kernels)
+        for key in self.kernels:
+            feature_lists[key] = {}
 
         for instance_id, G in enumerate(G_list):
             tmpfeats = self.__transform_explicit(instance_id, G, approximated)
@@ -92,27 +96,18 @@ class ODDSTincGraphKernel(GraphKernel):
                     else:
                         feature_lists[key][i] = phi
 
-        print "******"
-        print [fl.keys() for fl in feature_lists.values()]
-        print "******"
         for key in self.kernels:
             for i, phi in feature_lists[key].items():
-                feature_matrices.append(convert_to_sparse_matrix(phi))
+                feature_matrices.append(self.__convert_to_sparse_matrix(phi, len(G_list)))
 
         return feature_matrices
-    
-    # DEPRECATED
-    def transform_serial_explicit_nomatrix(self, G_list, approximated=False):
-        list_dict={}
-        for instance_id, G in enumerate(G_list):
-            list_dict.update(self.__transform_explicit(instance_id, G, approximated))
-        
-        return list_dict
     
     def getFeaturesApproximatedExplicit(self, G):
         # Inits feature maps (the \phi{}s for the selected kernels)
 
-        feature_maps = dict.fromkeys(self.kernels, {i:{} for i in range(self.max_radius+1)})
+        feature_maps = dict.fromkeys(self.kernels)
+        for key in self.kernels:
+            feature_maps[key] = {i:{} for i in range(self.max_radius+1)}
 
         if self.__version==0:
             ODDK_Dict_features = {i:{} for i in range(self.max_radius+1)}
@@ -289,86 +284,90 @@ class ODDSTincGraphKernel(GraphKernel):
                                         feature_maps['ODDSTPC'][depth][encoding] = 0
                                     feature_maps['ODDSTPC'][depth][encoding] += weight
                            
-                        # Extracting ST+ features
-                        if len(vertex_label_id_list)>1: #if there's more than one child
-                            successors=DAG.successors(u)
-                            # Extracts ST+ features
-                            for j in range(len(successors)):
-                                for l in range(depth):
-                                    branches=[]
-                                    sizestplus=0
-                                    for z in range(len(successors)):
-                                        size_map=len(MapNodeToProductionsID[successors[z]])
-                                        if j==z:
-                                            child_hash=MapNodeToProductionsID[successors[z]][min(size_map,depth)-1]
-                                            size_child=MapProductionIDtoSize[child_hash]
-                                            sizestplus+=size_child
-                                            branches.append((child_hash,size_child))
-                                        else:
-                                            if min(size_map,l)-1>=0:
-                                                child_hash=MapNodeToProductionsID[successors[z]][min(size_map,l)-1]
+                        if ('ODDSTP' in self.kernels) or ('ODDSTPC' in self.kernels):
+                            # Extracting ST+ features
+                            if len(vertex_label_id_list)>1: #if there's more than one child
+                                successors=DAG.successors(u)
+                                # Extracts ST+ features
+                                for j in range(len(successors)):
+                                    for l in range(depth):
+                                        branches=[]
+                                        sizestplus=0
+                                        for z in range(len(successors)):
+                                            size_map=len(MapNodeToProductionsID[successors[z]])
+                                            if j==z:
+                                                child_hash=MapNodeToProductionsID[successors[z]][min(size_map,depth)-1]
                                                 size_child=MapProductionIDtoSize[child_hash]
                                                 sizestplus+=size_child
                                                 branches.append((child_hash,size_child))
-                                                
-                                    branches.sort(key=itemgetter(0))
-                                    
-                                    encodingstplus=DAG.node[u]['label']
-                                    encodingstplus +=self.__startsymbol+str(branches[0][0])
-                        
-                                    for i in range(1,len(branches)):
-                                        encodingstplus += self.__conjsymbol+str(branches[i][0])
-                                    
-                                    encodingstplus+=self.__endsymbol
-                                    encodingstplus=hash(encodingstplus)
-                                    
-                                    sizestplus+=1
-                                    
-                                    if DAG.node[u]['depth'] == maxLevel - depth:
-#                                        print "--------------------------------------------- YAY"
-                                        if self.__version==0: #add oddk st+ feature
-                                            oddkenc=hash(self.__oddkfeatsymbol+str(encodingstplus))
-                                            if ODDK_Dict_features[depth].get(oddkenc) is None:
-                                                ODDK_Dict_features[depth][oddkenc]=0
-
-                                            weight = float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,sizestplus))
-                                            if self.normalization and self.normalization_type == 1:
-                                                weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
-
-                                            ODDK_Dict_features[depth][oddkenc] += weight
+                                            else:
+                                                if min(size_map,l)-1>=0:
+                                                    child_hash=MapNodeToProductionsID[successors[z]][min(size_map,l)-1]
+                                                    size_child=MapProductionIDtoSize[child_hash]
+                                                    sizestplus+=size_child
+                                                    branches.append((child_hash,size_child))
+                                                    
+                                        branches.sort(key=itemgetter(0))
                                         
-                                    # Adds context ST+ features
-                                    if DAG.node[u]['depth'] == maxLevel - depth:
-#                                        print "--------------------------------------------- YAY"
-                                        i=0
-                                        while i<len(branches):
-                                            size_child=branches[i][1]
-                                            weight=math.sqrt(math.pow(self.Lambda,size_child))
-                                            encodingfin=str(branches[i][0])+self.__contextsymbol+str(encodingstplus)
-                                            encodingfin=hash(encodingfin)
+                                        encodingstplus=DAG.node[u]['label']
+                                        encodingstplus +=self.__startsymbol+str(branches[0][0])
+                            
+                                        for i in range(1,len(branches)):
+                                            encodingstplus += self.__conjsymbol+str(branches[i][0])
+                                        
+                                        encodingstplus+=self.__endsymbol
+                                        encodingstplus=hash(encodingstplus)
+                                        
+                                        sizestplus+=1
+                                        
+                                        if DAG.node[u]['depth'] == maxLevel - depth:
+    #                                        print "--------------------------------------------- YAY"
+                                            if self.__version==0: #add oddk st+ feature
+                                                oddkenc=hash(self.__oddkfeatsymbol+str(encodingstplus))
+                                                if ODDK_Dict_features[depth].get(oddkenc) is None:
+                                                    ODDK_Dict_features[depth][oddkenc]=0
 
-                                            full_weight = weight*DAG.node[u]['paths']*(frequency+1)
-                                            if self.normalization and self.normalization_type == 1:
-                                                full_weight = math.tanh(weight)*math.tanh(DAG.node[u]['paths']*(frequency+1))
+                                                weight = float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,sizestplus))
+                                                if self.normalization and self.normalization_type == 1:
+                                                    weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
 
-                                            if 'ODDSTPC' in self.kernels:
-                                                if feature_maps['ODDSTPC'][depth].get(encodingfin) is None:
-                                                    feature_maps['ODDSTPC'][depth][encodingfin]=0
-                                                feature_maps['ODDSTPC'][depth][encodingfin] += full_weight
+                                                ODDK_Dict_features[depth][oddkenc] += weight
+                                                
+                                        # Adds context ST+ features
+                                        if DAG.node[u]['depth'] == maxLevel - depth:
+    #                                        print "--------------------------------------------- YAY"
+                                            i=0
+                                            while i<len(branches):
+                                                size_child=branches[i][1]
+                                                weight=math.sqrt(math.pow(self.Lambda,size_child))
+                                                encodingfin=str(branches[i][0])+self.__contextsymbol+str(encodingstplus)
+                                                encodingfin=hash(encodingfin)
 
-                                            i+=1
+                                                full_weight = weight*DAG.node[u]['paths']*(frequency+1)
+                                                if self.normalization and self.normalization_type == 1:
+                                                    full_weight = math.tanh(weight)*math.tanh(DAG.node[u]['paths']*(frequency+1))
 
-                                        if u==v:
-                                            weight = math.sqrt(math.pow(self.Lambda,sizestplus))
-                                            if self.normalization and self.normalization_type == 1:
-                                                weight = math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
+                                                if 'ODDSTPC' in self.kernels:
+                                                    if feature_maps['ODDSTPC'][depth].get(encodingfin) is None:
+                                                        feature_maps['ODDSTPC'][depth][encodingfin]=0
+                                                    feature_maps['ODDSTPC'][depth][encodingfin] += full_weight
 
-                                            if 'ODDSTP' in self.kernels:
-                                                if feature_maps['ODDSTP'][depth].get(encodingstplus) is None:
-                                                    feature_maps['ODDSTP'][depth][encodingstplus]=0
-                                                feature_maps['ODDSTP'][depth][encodingstplus] += weight
+                                                i+=1
+
+                                            if u==v:
+                                                weight = math.sqrt(math.pow(self.Lambda,sizestplus))
+                                                if self.normalization and self.normalization_type == 1:
+                                                    weight = math.tanh(math.sqrt(math.pow(self.Lambda,sizestplus)))
+
+                                                if 'ODDSTP' in self.kernels:
+                                                    if feature_maps['ODDSTP'][depth].get(encodingstplus) is None:
+                                                        feature_maps['ODDSTP'][depth][encodingstplus]=0
+                                                    feature_maps['ODDSTP'][depth][encodingstplus] += weight
          
-        processed_feat_maps = dict.fromkeys(self.kernels, {})
+        processed_feat_maps = dict.fromkeys(self.kernels)
+        for key in self.kernels:
+            processed_feat_maps[key] = {}
+
         if self.__version==0:
 
             for key in self.kernels:
@@ -381,7 +380,7 @@ class ODDSTincGraphKernel(GraphKernel):
                             sdf = phi
                             osdf = ODDK_Dict_features[i]
 
-                            # override default and apply split normalizatin if required
+                            # override default and apply split normalization if required
                             if self.split_normalization:
                                 if self.normalization:
                                     sdf = self.__normalization(phi) 
@@ -399,187 +398,12 @@ class ODDSTincGraphKernel(GraphKernel):
         else:
             for key in self.kernels:
                 for i, phi in feature_maps[key].items():
-                    if not len(phi)==0:
-                        if self.normalization:
-                            processed_feat_maps[key][i] = self.__normalization(phi)
-                        else:
-                            processed_feat_maps[key][i] = phi
+                    if self.normalization:
+                        processed_feat_maps[key][i] = self.__normalization(phi)
+                    else:
+                        processed_feat_maps[key][i] = phi
 
         return processed_feat_maps
-    
-    # TODO implement
-    def getFeaturesNoCollisionsExplicit(self,G):
-        Dict_features={}
-        for v in G.nodes():
-            (DAG,maxLevel)=generateDAG(G, v, self.max_radius)
-            
-            MapNodeToProductionsID={} #k:list(string)
-            MapNodetoFrequencies={} #k:list(int)
-            for u in DAG.nodes():
-                MapNodeToProductionsID[u]=[]
-                MapNodetoFrequencies[u]=[]
-            MapProductionIDtoSize={} #k:int
-            
-            for u in nx.topological_sort(DAG)[::-1]:
-                max_child_height=0
-                for child in DAG.successors(u):
-                    child_height=len(MapNodeToProductionsID.get(child))
-                    if child_height > max_child_height:
-                        max_child_height = child_height
-                        
-                for depth in range(max_child_height+1):
-                    if depth==0:
-                        enc=DAG.node[u]['label']
-                            
-                        MapNodeToProductionsID[u].append(enc)
-                        MapProductionIDtoSize[enc]=1
-                        
-                        frequency=0
-                        if max_child_height==0:
-                            frequency=maxLevel - DAG.node[u]['depth']
-                        
-                        MapNodetoFrequencies[u].append(frequency)
-                        
-                        if self.__version==0:#add oddk feature
-                            oddkenc=self.__oddkfeatsymbol+enc
-                            if Dict_features.get(oddkenc) is None:
-                                Dict_features[oddkenc]=0
-                            Dict_features[oddkenc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
-                        
-                        if u==v:
-                            if Dict_features.get(enc) is None:
-                                Dict_features[enc]=0
-                            Dict_features[enc]+=math.sqrt(self.Lambda)
-#                            print "[ST depth==0 && u==v] added feat: \"" + enc + "\""
-
-                    else:
-                        size=0
-                        encoding=DAG.node[u]['label']
-                        
-                        vertex_label_id_list=[]#list[string]
-                        min_freq_children=sys.maxint
-                        
-                        #computing ST feature
-                        for child in DAG.successors(u):
-                            size_map=len(MapNodeToProductionsID[child])
-                            child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
-                            freq_child=MapNodetoFrequencies[child][min(size_map,depth)-1]
-                            
-                            if freq_child<min_freq_children:
-                                min_freq_children=freq_child
-                            
-                            size_child=MapProductionIDtoSize[child_hash]
-                            size+=size_child
-
-                            vertex_label_id_list.append((child_hash,size_child))
-                        
-                        vertex_label_id_list.sort(key=itemgetter(0))
-                        encoding+=self.__startsymbol+vertex_label_id_list[0][0]
-                        
-                        for i in range(1,len(vertex_label_id_list)):
-                            encoding+=self.__conjsymbol+vertex_label_id_list[i][0]
-                        
-                        encoding+=self.__endsymbol
-                        
-                        MapNodeToProductionsID[u].append(encoding)
-                        size+=1
-                        MapProductionIDtoSize[encoding]=size
-                        
-                        frequency = min_freq_children
-                        MapNodetoFrequencies[u].append(frequency)
-                        
-                        if self.__version==0: #add oddk feature
-                            oddkenc=self.__oddkfeatsymbol+encoding
-                            if Dict_features.get(oddkenc) is None:
-                                Dict_features[oddkenc]=0
-                            Dict_features[oddkenc]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                        
-                        #adding context features
-                        i=0
-                        while i<len(vertex_label_id_list):
-                            size_child=vertex_label_id_list[i][1]
-                            weight=math.sqrt(math.pow(self.Lambda,size_child))
-                            encodingfin=vertex_label_id_list[i][0]+self.__contextsymbol+encoding
-                            if Dict_features.get(encodingfin) is None:
-                                Dict_features[encodingfin]=0
-                            Dict_features[encodingfin]+=weight*DAG.node[u]['paths']*(frequency+1)
-                            i+=1
-#                            print "[ST context] added feat: \"" + encodingfin + "\""
-                        if u==v:
-                            if Dict_features.get(encoding) is None:
-                                Dict_features[encoding]=0
-                            Dict_features[encoding]+=math.sqrt(math.pow(self.Lambda,size))
-#                            print "[ST depth>0 & u==v] added feat: \"" + encoding + "\""
-                            
-                        #extracting features st+
-                        if len(vertex_label_id_list)>1: #if there's more than one child
-                            successors=DAG.successors(u)
-                            #extract ST+ features
-                            for j in range(len(successors)):
-                                for l in range(depth):
-#                                    print "*** node (j): " + str(j) + " depth (l): " + str(l) + " ***" 
-                                    branches=[]
-                                    sizestplus=0
-                                    for z in range(len(successors)):
-                                        size_map=len(MapNodeToProductionsID[successors[z]])
-                                        if j==z:
-                                            child_hash=MapNodeToProductionsID[successors[z]][min(size_map,depth)-1]
-                                            size_child=MapProductionIDtoSize[child_hash]
-                                            sizestplus+=size_child
-                                            branches.append((child_hash,size_child))
-                                        else:
-                                            if min(size_map,l)-1>=0:
-                                                child_hash=MapNodeToProductionsID[successors[z]][min(size_map,l)-1]
-                                                size_child=MapProductionIDtoSize[child_hash]
-                                                sizestplus+=size_child
-                                                branches.append((child_hash,size_child))
-                                                
-                                    branches.sort(key=itemgetter(0))
-                                    
-                                    encodingstplus=DAG.node[u]['label']
-                                    encodingstplus +=self.__startsymbol+branches[0][0]
-                        
-                                    for i in range(1,len(branches)):
-                                        encodingstplus += self.__conjsymbol+branches[i][0]
-                                    
-                                    encodingstplus+=self.__endsymbol
-                                    
-                                    sizestplus+=1
-                                    
-                                    if self.__version==0: #add oddk st+ feature
-                                        oddkenc=self.__oddkfeatsymbol+encodingstplus
-                                        if Dict_features.get(oddkenc) is None:
-                                            Dict_features[oddkenc]=0
-                                        Dict_features[oddkenc]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,sizestplus))
-                                    
-                                    #add context st+ features
-                                    i=0
-                                    while i<len(branches):
-                                        size_child=branches[i][1]
-                                        weight=math.sqrt(math.pow(self.Lambda,size_child))
-                                        encodingfin=branches[i][0]+self.__contextsymbol+encodingstplus
-                                        if Dict_features.get(encodingfin) is None:
-                                            Dict_features[encodingfin]=0
-                                        Dict_features[encodingfin]+=weight*DAG.node[u]['paths']*(frequency+1)
-                                        i+=1
-#                                        print "[ST+ context] added feat: \"" + encodingfin + "\""
-                                    if u==v:
-                                        if Dict_features.get(encodingstplus) is None:
-                                            Dict_features[encodingstplus]=0
-                                        Dict_features[encodingstplus]+=math.sqrt(math.pow(self.Lambda,sizestplus))
-#                                        print "[ST+ u==v] added feat: \"" + encodingstplus + "\""
-
-#                                    print "***"
-            
-#            print "---"
-
-#        for (k,v) in Dict_features.items():
-#            print k+": " + str(v)
-
-#        print len(Dict_features)
-
-                                    
-        return Dict_features
     
     def __normalization(self, feature_list):
         """
@@ -603,6 +427,39 @@ class ODDSTincGraphKernel(GraphKernel):
             return normalized_feature_vector
         else :
             return dict(feature_list)
+
+    def __convert_to_sparse_matrix(self, feature_dict, nrows):
+        """
+        Private static method that convert the feature vector from dictionary to sparse matrix
+        @type feature_dict: Dictionary
+        @param feature_dict: a feature vector
+        
+        @rtype: scipy.sparse.csr_matrix
+        @return: the feature vector in sparse form
+        """
+        if len(feature_dict) == 0:
+            raise Exception('ERROR: something went wrong, empty feature_dict.')
+
+        data = feature_dict.values()
+        row, col = [], []
+
+        for i, j in feature_dict.iterkeys():
+            row.append( i )
+            col.append( j )
+
+        MapEncToId={}
+        idenc=0
+        for enc in np.unique(col):
+            MapEncToId[enc]=idenc
+            idenc+=1
+        colid=[]
+
+        for enc in col:
+            colid.append(MapEncToId[enc])
+
+        X = csr_matrix( (data,(row,colid)), shape = (nrows, max(colid)+1))
+
+        return X
 
     def computeGramsExplicit(self, g_it, approx =True, precomputed =None):
         if precomputed is None:
