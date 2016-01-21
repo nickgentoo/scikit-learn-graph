@@ -46,8 +46,10 @@ class ODDSTincGraphKernel(GraphKernel):
         self.__contextsymbol='@'
         self.__oddkfeatsymbol='*'
         self.__version=version
+        self.decomp = True
     
     def transform(self, G_list, n_jobs = 1, approximated=True):
+        raise "Not implemented"
         """
         Public method that given a list of networkx graph it creates the sparse matrix (example, features) in parallel or serial
         @type G_list: networkx graph generator
@@ -146,7 +148,7 @@ class ODDSTincGraphKernel(GraphKernel):
                         
                         MapNodetoFrequencies[u].append(frequency)
                         
-                        if DAG.node[u]['depth'] == maxLevel - depth:
+                        if DAG.node[u]['depth'] == maxLevel - depth or not self.decomp:
 #                            print "--------------------------------------------- YAY"
                             if self.__version==0:#add oddk feature
                                 hashoddk=hash(self.__oddkfeatsymbol+str(enc))
@@ -162,7 +164,7 @@ class ODDSTincGraphKernel(GraphKernel):
 
                                 ODDK_Dict_features[depth][hashoddk] += weight
                             
-                        if DAG.node[u]['depth'] == maxLevel - depth:
+                        if DAG.node[u]['depth'] == maxLevel - depth or not self.decomp:
 #                            print "--------------------------------------------- YAY"
                             weight = math.sqrt(self.Lambda)
                             if self.normalization and self.normalization_type == 1:
@@ -171,11 +173,11 @@ class ODDSTincGraphKernel(GraphKernel):
                             if 'ODDST' in self.kernels:
                                 if feature_maps['ODDST'][depth].get(enc) is None:
                                     feature_maps['ODDST'][depth][enc] = 0
-                                feature_maps['ODDST'][depth][enc] += weight
+                                feature_maps['ODDST'][depth][enc] += float(frequency+1.0) * weight
                             if 'ODDSTP' in self.kernels:
                                 if feature_maps['ODDSTP'][depth].get(enc) is None:
                                     feature_maps['ODDSTP'][depth][enc] = 0
-                                feature_maps['ODDSTP'][depth][enc] += weight
+                                feature_maps['ODDSTP'][depth][enc] += float(frequency+1.0) * weight
 
                             if u==v:
                                 if 'ODDSTPC' in self.kernels:
@@ -224,7 +226,7 @@ class ODDSTincGraphKernel(GraphKernel):
                         frequency = min_freq_children
                         MapNodetoFrequencies[u].append(frequency)
                         
-                        if DAG.node[u]['depth'] == maxLevel - depth:
+                        if DAG.node[u]['depth'] == maxLevel - depth or not self.decomp:
 #                            print "--------------------------------------------- YAY"
                             if self.__version==0: #add oddk feature
                                 oddkenc=hash(self.__oddkfeatsymbol+str(encoding))
@@ -238,7 +240,7 @@ class ODDSTincGraphKernel(GraphKernel):
                                 ODDK_Dict_features[depth][oddkenc] += weight
                             
                         # Adds context ST features
-                        if DAG.node[u]['depth'] == maxLevel - depth:
+                        if DAG.node[u]['depth'] == maxLevel - depth or not self.decomp:
 #                            print "--------------------------------------------- YAY"
                             i=0
                             while i<len(vertex_label_id_list):
@@ -268,11 +270,11 @@ class ODDSTincGraphKernel(GraphKernel):
                             if 'ODDST' in self.kernels:
                                 if feature_maps['ODDST'][depth].get(encoding) is None:
                                     feature_maps['ODDST'][depth][encoding] = 0
-                                feature_maps['ODDST'][depth][encoding] += weight
+                                feature_maps['ODDST'][depth][encoding] += float(frequency+1.0) * weight
                             if 'ODDSTP' in self.kernels:
                                 if feature_maps['ODDSTP'][depth].get(encoding) is None:
                                     feature_maps['ODDSTP'][depth][encoding] = 0
-                                feature_maps['ODDSTP'][depth][encoding] += weight
+                                feature_maps['ODDSTP'][depth][encoding] += float(frequency+1.0) * weight
 
                             if u==v:
                                 if 'ODDSTC' in self.kernels:
@@ -320,7 +322,7 @@ class ODDSTincGraphKernel(GraphKernel):
                                         
                                         sizestplus+=1
                                         
-                                        if DAG.node[u]['depth'] == maxLevel - depth:
+                                        if DAG.node[u]['depth'] == maxLevel - depth or not self.decomp:
     #                                        print "--------------------------------------------- YAY"
                                             if self.__version==0: #add oddk st+ feature
                                                 oddkenc=hash(self.__oddkfeatsymbol+str(encodingstplus))
@@ -334,7 +336,7 @@ class ODDSTincGraphKernel(GraphKernel):
                                                 ODDK_Dict_features[depth][oddkenc] += weight
                                                 
                                         # Adds context ST+ features
-                                        if DAG.node[u]['depth'] == maxLevel - depth:
+                                        if DAG.node[u]['depth'] == maxLevel - depth or not self.decomp:
     #                                        print "--------------------------------------------- YAY"
                                             i=0
                                             while i<len(branches):
@@ -363,6 +365,10 @@ class ODDSTincGraphKernel(GraphKernel):
                                                     if feature_maps['ODDSTP'][depth].get(encodingstplus) is None:
                                                         feature_maps['ODDSTP'][depth][encodingstplus]=0
                                                     feature_maps['ODDSTP'][depth][encodingstplus] += weight
+                                                if 'ODDSTPC' in self.kernels:
+                                                    if feature_maps['ODDSTPC'][depth].get(encodingstplus) is None:
+                                                        feature_maps['ODDSTPC'][depth][encodingstplus]=0
+                                                    feature_maps['ODDSTPC'][depth][encodingstplus] += weight
          
         processed_feat_maps = dict.fromkeys(self.kernels)
         for key in self.kernels:
@@ -467,6 +473,6 @@ class ODDSTincGraphKernel(GraphKernel):
 
         return [np.array(p.dot(p.T).todense().tolist()) for p in precomputed]
 
-    def computeKernelMatricesTrain(self, Graphs):
+    def computeKernelMatrixTrain(self, Graphs):
         return self.computeGramsExplicit(Graphs)   
 

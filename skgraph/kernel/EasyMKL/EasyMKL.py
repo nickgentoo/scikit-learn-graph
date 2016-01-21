@@ -26,7 +26,7 @@ class EasyMKL():
         self.lam = lam
         self.tracenorm = tracenorm
         
-        self.list_Ktr = None
+        self.sum_Ktr = None
         self.labels = None
         self.gamma = None
         self.weights = None
@@ -77,6 +77,7 @@ class EasyMKL():
         b = matrix([[1.0],[1.0]],(2,1))
         
         solvers.options['show_progress']=False#True
+
         sol = solvers.qp(Q,p,G,h,A,b)
         # Gamma:
         self.gamma = sol['x']     
@@ -104,13 +105,12 @@ class EasyMKL():
         sol = solvers.qp(Q,p,G,h,A,b)
         # Gamma:
         self.gamma = sol['x']
-    
-    
+
         return self
     
     def rank(self, sum_Kte):
         '''
-            list_Ktr : list of kernels of the training examples
+            sum_Kte : sum of kernels of the test examples
             labels : array of the labels of the training examples
             Returns the list of the examples in test set of the kernel K ranked
         '''
