@@ -14,7 +14,15 @@ c=float(sys.argv[2])
 
 ##TODO read from libsvm format
 from sklearn.datasets import load_svmlight_file
+#TODO metodo + veloce per caricar ele amtrici (anche per fare dump)
+#from svmlight_loader import load_svmlight_file # riga 22 non serve 
 km, target_array = load_svmlight_file(sys.argv[1])
+#print type(target_array)
+#print target_array
+#Controlla se target array ha +1 e -1! se ha 0, sostituisco gli 0 ai -1
+if not -1 in target_array:
+    print "WARNING: no -1 in target array! Changing 0s to -1s"
+    target_array = np.array([-1 if x == 0 else x for x in target_array])
 #print km
 #tolgo indice
 ##############kmgood=km[:,1:].todense()
@@ -31,14 +39,15 @@ gram=km[:,1:].todense()
 #-----------------------------------
 #print gram
          
-from sklearn.metrics import make_scorer
+#from sklearn.metrics import make_scorer
 # (16) in the paper
 def my_custom_loss_func(ground_truth, predictions):
     total_loss=0.0
     for gt,p in zip(ground_truth, predictions):
-         diff = (1.0 - (gt * p)) / 2.0
+         #print gt, p
+         diff = (1.0 - (gt * p)) / 2.0 
          if diff<0:
-             diff=0
+             diff=0.0
          if diff > 1.0:
              diff=1.0
          total_loss+=diff
@@ -105,17 +114,23 @@ for rs in range(42,43):
 
         #loss  = make_scorer(my_custom_loss_func, greater_is_better=False)
     
-        #from sklearn.metrics import accuracy_score
+        from sklearn.metrics import accuracy_score
         #predictions on training set
         y_train_predicted=clf.decision_function(X_train)
-        print type( my_custom_loss_func(y_train, y_train_predicted))
+        #print type( my_custom_loss_func(y_train, y_train_predicted))
         print " training loss ",(str( my_custom_loss_func(y_train, y_train_predicted))), 
         f.write(str(my_custom_loss_func(y_train, y_train_predicted))+"\t")
-
         # predict on test examples
         y_test_predicted=clf.decision_function(X_test)
-        print y_test.shape, y_test_predicted.shape
-        print " test loss ",(str( my_custom_loss_func(y_test, y_test_predicted)))        
+        #print y_test.shape, y_test_predicted.shape
+        print " test loss ",(str( my_custom_loss_func(y_test, y_test_predicted)))  
+        y_test_predicted_binary=clf.predict(X_test)
+        #print y_test
+        #print y_test_predicted_binary
+        #print "Accuracy: ", accuracy_score(y_test, y_test_predicted_binary)        
+        #y_test_sign=map(np.sign, y_test_predicted)
+        #print "Accuracy_decision: ", accuracy_score(y_test, y_test_sign)
+
         sc.append(my_custom_loss_func(y_test, y_test_predicted))
         f.write(str( my_custom_loss_func(y_test, y_test_predicted))+"\n")
 
