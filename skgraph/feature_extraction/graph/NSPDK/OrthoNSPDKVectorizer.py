@@ -25,7 +25,7 @@ from . import _ortho_NSPDKgraph as graph
 """
     Transforms labeled, weighted, nested graphs in sparse vectors.
 """
-class NSPDKVectorizer():
+class OrthoNSPDKVectorizer():
     
     def __init__(self,
                      r = 3,

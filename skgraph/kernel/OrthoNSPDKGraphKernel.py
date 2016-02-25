@@ -35,8 +35,9 @@ import numpy as np
 import copy
 from KernelTools import convert_to_sparse_matrix
 from graphKernel import GraphKernel
-from skgraph.feature_extraction.graph.NSPDK.NSPDKVectorizer import NSPDKVectorizer
-class NSPDKGraphKernel(GraphKernel):
+from skgraph.feature_extraction.graph.NSPDK.OrthoNSPDKVectorizer import OrthoNSPDKVectorizer
+
+class OrthoNSPDKGraphKernel(GraphKernel):
     """
     Weisfeiler_Lehman graph kernel.
     """
@@ -44,7 +45,7 @@ class NSPDKGraphKernel(GraphKernel):
         self.h=r
         self.d=d
         self.normalization=normalization
-        self.vectorizer=NSPDKVectorizer(r=self.h,d=self.d,normalization=self.normalization)
+        self.vectorizer=OrthoNSPDKVectorizer(r=self.h,d=self.d,normalization=self.normalization)
 
     def kernelFunction(self, g_1, g_2):
         """Compute the kernel value (similarity) between two graphs. 
