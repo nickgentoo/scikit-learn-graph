@@ -54,7 +54,7 @@ class FastEasyMKL():
         for k in self.list_Ktr:
             self.traces.append(self.traceN(k))
         if self.tracenorm:
-            self.list_Ktr = [k / self.traceN(k) for k in list_Ktr]
+            self.list_Ktr = [k / self.traceN(k) if self.traceN(k) > 0. else k for k in list_Ktr]
 
         set_labels = set(labels)
         if len(set_labels) != 2:
@@ -96,14 +96,15 @@ class FastEasyMKL():
             self.weights.append(b[0])
             
         norm2 = sum([w for w in self.weights])
-        self.weights = [w / norm2 for w in self.weights]
+        self.weights = [w / norm2 if norm2 != 0. else w for w in self.weights]
 
         if self.tracenorm: 
             for idx,val in enumerate(self.traces):
-                self.weights[idx] = self.weights[idx] / val        
+                if val > 0.:
+                    self.weights[idx] = self.weights[idx] / val        
         
         if True:
-            ker_matrix = matrix(self.sum_kernels(list_Ktr, self.weights))
+            ker_matrix = matrix(self.sum_kernels(self.list_Ktr, self.weights))
             YY = matrix(np.diag(list(matrix(self.labels))))
             
             KLL = (1.0-self.lam)*YY*ker_matrix*YY

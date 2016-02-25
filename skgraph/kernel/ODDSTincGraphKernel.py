@@ -404,10 +404,11 @@ class ODDSTincGraphKernel(GraphKernel):
         else:
             for key in self.kernels:
                 for i, phi in feature_maps[key].items():
-                    if self.normalization:
-                        processed_feat_maps[key][i] = self.__normalization(phi)
-                    else:
-                        processed_feat_maps[key][i] = phi
+                    if not len(phi)==0:
+                        if self.normalization:
+                            processed_feat_maps[key][i] = self.__normalization(phi)
+                        else:
+                            processed_feat_maps[key][i] = phi
 
         return processed_feat_maps
     

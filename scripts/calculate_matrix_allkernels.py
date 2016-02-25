@@ -148,18 +148,19 @@ if __name__=='__main__':
     # tc = time.clock()
 
     print "Saving Gram matrix"
-    output=open(name+".svmlight","w")
-    for i in xrange(len(GM)):
-        output.write(str(g_it.target[i])+" 0:"+str(i+1)+" ")
-        for j in range(len(GM[i])):
-            output.write(str(j+1)+":"+str(GM[i][j])+" ")
-        output.write("\n")
+    #output=open(name+".svmlight","w")
+    #for i in xrange(len(GM)):
+    #    output.write(str(g_it.target[i])+" 0:"+str(i+1)+" ")
+    #    for j in range(len(GM[i])):
+    #        output.write(str(j+1)+":"+str(GM[i][j])+" ")
+    #    output.write("\n")
 
-    output.close()
+    #output.close()
 
     # print GMsvm
     # from sklearn import datasets
-    # datasets.dump_svmlight_file(GM, g_it.target, name+".svmlight")
+    from sklearn.datasets import dump_svmlight_file
+    dump_svmlight_file(GM, g_it.target, name+".svmlight")
 
     # print(time.time()-tt, time.clock()-tc)
     # print GM
