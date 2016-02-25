@@ -103,7 +103,7 @@ if __name__=='__main__':
         ODDkernel=WLGraphKernel(r=max_radius,normalization=normalization)
     elif kernel=="ODDST":
         print "Using ST kernel"
-        ODDkernel=ODDSTGraphKernel(r=max_radius,l=la,normalization=normalization,ntype=ntype)
+        ODDkernel=ODDSTGraphKernel(r=max_radius,l=la,normalization=normalization)#,ntype=ntype)
     elif kernel=="ODDSTP":
         print "Using ST+ kernel"
         ODDkernel=ODDSTPGraphKernel(r=max_radius,l=la,normalization=normalization,ntype=ntype,nsplit=nsplit)
