@@ -82,7 +82,7 @@ class ODDSTincGraphKernel(GraphKernel):
 #            feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesNoCollisionsExplicit(G_orig).items()})
 
         return feature_lists
-        
+
     def transform_serial_explicit(self, G_list, approximated =True):
         feature_matrices = []
         feature_lists = dict.fromkeys(self.kernels)

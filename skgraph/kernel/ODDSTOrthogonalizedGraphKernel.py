@@ -294,7 +294,7 @@ class ODDSTOrthogonalizedGraphKernel(GraphKernel):
                 hashv ^= (~((hashv << 11) + ord(key[i]) ^ (hashv >> 5)))
         return hashv & self.__bitmask
     
-    def __convert_to_sparse_matrix(self,feature_dict):
+    def __convert_to_sparse_matrix(self, feature_dict):
         """
         Private static method that convert the feature vector from dictionary to sparse matrix
         @type feature_dict: Dictionary
@@ -330,7 +330,7 @@ class ODDSTOrthogonalizedGraphKernel(GraphKernel):
         for i in xrange(len(featuresAtDepth)):
             feature_list_depth.append(defaultdict(lambda : defaultdict(float)))
             feature_list_depth[i].update({(instance_id,k):v for (k,v) in featuresAtDepth[i].items()})
-            self.__normalization(feature_list_depth[i])
+            feature_list_depth[i] = self.__normalization(feature_list_depth[i])
         return feature_list_depth
         
     def __transform_serial(self, G_list):
