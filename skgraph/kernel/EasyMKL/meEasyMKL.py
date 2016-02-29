@@ -11,7 +11,8 @@ Paper @ http://www.math.unipd.it/~mdonini/publications.html
 from cvxopt import matrix, solvers, mul
 import numpy as np
 
-class FastEasyMKL():
+
+class EasyMKL():
     ''' EasyMKL is a Multiple Kernel Learning algorithm.
         The parameter lam (lambda) has to be validated from 0 to 1.
 
@@ -25,7 +26,7 @@ class FastEasyMKL():
         self.lam = lam
         self.tracenorm = tracenorm
         
-        self.list_Ktr = None
+        self.sum_Ktr = None
         self.labels = None
         self.gamma = None
         self.weights = None
@@ -45,16 +46,12 @@ class FastEasyMKL():
     def traceN(self, k):
         return sum([k[i,i] for i in range(k.size[0])]) / k.size[0]
     
-    def train(self, list_Ktr, labels):
+    def train(self, sum_Ktr, labels):
         ''' 
-            list_Ktr : list of kernels of the training examples
+            sum_Ktr :  a single kernel of the training examples (the sum of all the kernels)
             labels : array of the labels of the training examples
         '''
-        self.list_Ktr = list_Ktr  
-        for k in self.list_Ktr:
-            self.traces.append(self.traceN(k))
-        if self.tracenorm:
-            self.list_Ktr = [k / self.traceN(k) if self.traceN(k) > 0. else k for k in list_Ktr]
+        self.sum_Ktr = sum_Ktr
 
         set_labels = set(labels)
         if len(set_labels) != 2:
@@ -63,11 +60,12 @@ class FastEasyMKL():
         elif (-1 in set_labels and 1 in set_labels):
             self.labels = labels
         else:
+            #poslab = np.max(set_labels)
             poslab = max(set_labels)
             self.labels = matrix(np.array([1. if i==poslab else -1. for i in labels]))
         
         # Sum of the kernels
-        ker_matrix = matrix(self.sum_kernels(self.list_Ktr))
+        ker_matrix = matrix(self.sum_Ktr)
 
         YY = matrix(np.diag(list(matrix(self.labels))))
         KLL = (1.0-self.lam)*YY*ker_matrix*YY
@@ -80,6 +78,7 @@ class FastEasyMKL():
         b = matrix([[1.0],[1.0]],(2,1))
         
         solvers.options['show_progress']=False#True
+
         sol = solvers.qp(Q,p,G,h,A,b)
         # Gamma:
         self.gamma = sol['x']     
@@ -88,45 +87,31 @@ class FastEasyMKL():
         bias = 0.5 * self.gamma.T * ker_matrix * YY * self.gamma
         self.bias = bias
 
-        # Weights evaluation:
-        yg =  mul(self.gamma.T,self.labels.T)
-        self.weights = []
-        for kermat in self.list_Ktr:
-            b = yg*kermat*yg.T
-            self.weights.append(b[0])
-            
-        norm2 = sum([w for w in self.weights])
-        self.weights = [w / norm2 if norm2 != 0. else w for w in self.weights]
+        return self
 
-        if self.tracenorm: 
-            for idx,val in enumerate(self.traces):
-                if val > 0.:
-                    self.weights[idx] = self.weights[idx] / val        
+    def train2(self, sum_Ktr):
+        ker_matrix = matrix(sum_Ktr)
+        YY = matrix(np.diag(list(matrix(self.labels))))
         
-        if True:
-            ker_matrix = matrix(self.sum_kernels(self.list_Ktr, self.weights))
-            YY = matrix(np.diag(list(matrix(self.labels))))
-            
-            KLL = (1.0-self.lam)*YY*ker_matrix*YY
-            LID = matrix(np.diag([self.lam]*len(self.labels)))
-            Q = 2*(KLL+LID)
-            p = matrix([0.0]*len(self.labels))
-            G = -matrix(np.diag([1.0]*len(self.labels)))
-            h = matrix([0.0]*len(self.labels),(len(self.labels),1))
-            A = matrix([[1.0 if lab==+1 else 0 for lab in self.labels],[1.0 if lab2==-1 else 0 for lab2 in self.labels]]).T
-            b = matrix([[1.0],[1.0]],(2,1))
-            
-            solvers.options['show_progress']=False#True
-            sol = solvers.qp(Q,p,G,h,A,b)
-            # Gamma:
-            self.gamma = sol['x']
+        KLL = (1.0-self.lam)*YY*ker_matrix*YY
+        LID = matrix(np.diag([self.lam]*len(self.labels)))
+        Q = 2*(KLL+LID)
+        p = matrix([0.0]*len(self.labels))
+        G = -matrix(np.diag([1.0]*len(self.labels)))
+        h = matrix([0.0]*len(self.labels),(len(self.labels),1))
+        A = matrix([[1.0 if lab==+1 else 0 for lab in self.labels],[1.0 if lab2==-1 else 0 for lab2 in self.labels]]).T
+        b = matrix([[1.0],[1.0]],(2,1))
         
-        
+        solvers.options['show_progress']=False#True
+        sol = solvers.qp(Q,p,G,h,A,b)
+        # Gamma:
+        self.gamma = sol['x']
+
         return self
     
-    def rank(self,list_Ktest):
+    def rank(self, sum_Kte):
         '''
-            list_Ktr : list of kernels of the training examples
+            sum_Kte : sum of kernels of the test examples
             labels : array of the labels of the training examples
             Returns the list of the examples in test set of the kernel K ranked
         '''
@@ -136,6 +121,6 @@ class FastEasyMKL():
          
         #YY = matrix(np.diag(self.labels).copy())
         YY = matrix(np.diag(list(matrix(self.labels))))
-        ker_matrix = matrix(self.sum_kernels(list_Ktest, self.weights))
+        ker_matrix = matrix(sum_Kte)
         z = ker_matrix*YY*self.gamma
         return z
