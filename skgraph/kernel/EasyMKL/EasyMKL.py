@@ -50,11 +50,14 @@ class EasyMKL():
             list_Ktr : list of kernels of the training examples
             labels : array of the labels of the training examples
         '''
-#        self.list_Ktr = list_Ktr  
-        for k in list_Ktr:
+        self.list_Ktr = list_Ktr  
+        for k in self.list_Ktr:
             self.traces.append(self.traceN(k))
+
         if self.tracenorm:
-            self.list_Ktr = [k / self.traceN(k) if self.traceN(k) > 0. else k for k in list_Ktr]
+            for k in self.list_Ktr:
+                if self.traceN(k) > 0.:
+                    k /= self.traceN(k) 
 
         set_labels = set(labels)
         if len(set_labels) != 2:

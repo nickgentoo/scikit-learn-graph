@@ -46,7 +46,7 @@ class ODDSTincGraphKernel(GraphKernel):
         self.__contextsymbol='@'
         self.__oddkfeatsymbol='*'
         self.__version=version
-        self.decomp = True
+        self.decomp = False
     
     def transform(self, G_list, n_jobs = 1, approximated=True):
         raise "Not implemented"
@@ -378,37 +378,37 @@ class ODDSTincGraphKernel(GraphKernel):
 
             for key in self.kernels:
                 for i, phi in feature_maps[key].items():
-                    if not len(phi)==0:
+#                    if not len(phi)==0:
 
-                        # ODDST has no version 0 kernel
-                        if key != 'ODDST':
-                            # default case
-                            sdf = phi
-                            osdf = ODDK_Dict_features[i]
+                    # ODDST has no version 0 kernel
+                    if key != 'ODDST':
+                        # default case
+                        sdf = phi
+                        osdf = ODDK_Dict_features[i]
 
-                            # override default and apply split normalization if required
-                            if self.split_normalization:
-                                if self.normalization:
-                                    sdf = self.__normalization(phi) 
-                                    osdf = self.__normalization(ODDK_Dict_features[i]) 
-
-                            # merge the two feature dicts
-                            for (key,value) in osdf.iteritems():
-                                sdf[key] = value
-
-                            # again if normalization is required perform it (it won't affect the previous split normalization step)
+                        # override default and apply split normalization if required
+                        if self.split_normalization:
                             if self.normalization:
-                                processed_feat_maps[key][i] = self.__normalization(sdf) 
-                            else:
-                                processed_feat_maps[key][i] = sdf
+                                sdf = self.__normalization(phi) 
+                                osdf = self.__normalization(ODDK_Dict_features[i]) 
+
+                        # merge the two feature dicts
+                        for (key,value) in osdf.iteritems():
+                            sdf[key] = value
+
+                        # again if normalization is required perform it (it won't affect the previous split normalization step)
+                        if self.normalization:
+                            processed_feat_maps[key][i] = self.__normalization(sdf) 
+                        else:
+                            processed_feat_maps[key][i] = sdf
         else:
             for key in self.kernels:
                 for i, phi in feature_maps[key].items():
-                    if not len(phi)==0:
-                        if self.normalization:
-                            processed_feat_maps[key][i] = self.__normalization(phi)
-                        else:
-                            processed_feat_maps[key][i] = phi
+#                    if not len(phi)==0:
+                    if self.normalization:
+                        processed_feat_maps[key][i] = self.__normalization(phi)
+                    else:
+                        processed_feat_maps[key][i] = phi
 
         return processed_feat_maps
     
