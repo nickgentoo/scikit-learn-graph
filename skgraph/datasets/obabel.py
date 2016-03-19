@@ -22,7 +22,7 @@ along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 import openbabel as ob
 import json
-#import pybel
+import pybel
 import networkx as nx
 from networkx.readwrite import json_graph
 import tempfile

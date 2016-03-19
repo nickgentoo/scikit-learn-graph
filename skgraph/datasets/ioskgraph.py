@@ -56,6 +56,32 @@ def load_target(name):
     Y = [y.strip() for y in read(name) if y]
     return np.array(Y).astype(int)
     
+def dump_svmlight_file(kernel_matrix, target_array, file_path):
+    """
+    Saves a kernel matrix to file in the svmlight sparse format
+    Parameters
+    ----------
+    kernel_matrix : numpy.array / numpy.matrix
+        The N x N kernel matrix to be saved
+    target_array : numpy.array
+        An N-size array with the labels associated with each sample used to build the kernel matrix
+    file_path : string
+        The path where to save the matrix, should end with ".svmlight"
+    """
+
+    output = open(file_path, "w")
+
+    for i in xrange(len(kernel_matrix)):
+        output.write(str(target_array[i])+" ")
+
+        for j in range(len(kernel_matrix[i])):
+            if kernel_matrix[i][j] != 0.:
+                output.write(str(j)+":"+str(kernel_matrix[i][j])+" ")
+
+        output.write("\n")
+
+    output.close()
+
 #def store_matrix(matrix = '', output_dir_path = '', out_file_name = '', output_format = ''):
 #    """
 #    TODO: output of a matrix on a file.

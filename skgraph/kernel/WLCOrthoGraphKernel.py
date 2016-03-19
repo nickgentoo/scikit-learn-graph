@@ -17,7 +17,7 @@ from KernelTools import convert_to_sparse_matrix
 from graphKernel import GraphKernel
 from sklearn import preprocessing as pp
 
-class WLCGraphKernel(GraphKernel):
+class WLCOrthoGraphKernel(GraphKernel):
     """
     Weisfeiler_Lehman graph kernel.
     """
@@ -53,7 +53,7 @@ class WLCGraphKernel(GraphKernel):
         k : The similarity value between g1 and g2.
         """
         gl = [g_1, g_2]
-        return self.computeGram(gl)[0, 1]
+        return self.computeGrams(gl)[0, 1]
     
     def transform(self, graph_list):
         """
@@ -61,7 +61,10 @@ class WLCGraphKernel(GraphKernel):
         """
         n = len(graph_list) #number of graphs
         
-        phi={} #dictionary representing the phi vector for each graph. phi[r][c]=v each row is a graph. each column is a feature
+        # list of the orthogonalized phi: phis[i] is the phi of the i-th iteration of the WL test.
+        phis=[]
+        for i in range(self.h+1):
+            phis.append({})
         
         NodeIdToLabelId = [0] * n # NodeIdToLabelId[i][j] is labelid of node j in graph i
         label_lookup = {} #map from features to corresponding id
@@ -80,9 +83,9 @@ class WLCGraphKernel(GraphKernel):
                 
                 if self.__version==0: #consider old FS features
                     feature=self.__fsfeatsymbol+str(label_lookup[graph_list[i].node[j]['label']])
-                    if not phi.has_key((i,feature)):
-                        phi[(i,feature)]=0.0
-                    phi[(i,feature)]+=1.0
+                    if not phis[0].has_key((i,feature)):
+                        phis[0][(i,feature)]=0.0
+                    phis[0][(i,feature)]+=1.0
         
         ### MAIN LOOP
         it = 0
@@ -112,27 +115,26 @@ class WLCGraphKernel(GraphKernel):
                         
                     if self.__version==0 and it<self.h: #consider FS features
                         feature=self.__fsfeatsymbol+str(NewNodeIdToLabelId[i][j])
-                        if not phi.has_key((i,feature)):
-                            phi[(i,feature)]=0.0
-                        phi[(i,feature)]+=1.0
+                        if not phis[it].has_key((i,feature)):
+                            phis[it][(i,feature)]=0.0
+                        phis[it][(i,feature)]+=1.0
                     
                     #adding feature with contexts
                     if it<self.h:
                         feature=str(NodeIdToLabelId[i][j])+self.__contextsymbol+str(NewNodeIdToLabelId[i][j]) #with context
                     else:
                         feature=str(NodeIdToLabelId[i][j]) #null context
-                    if not phi.has_key((i,feature)):
-                        phi[(i,feature)]=0.0
-                    phi[(i,feature)]+=1.0
+                    if not phis[it].has_key((i,feature)):
+                        phis[it][(i,feature)]=0.0
+                    phis[it][(i,feature)]+=1.0
             
             NodeIdToLabelId = copy.deepcopy(NewNodeIdToLabelId) #update current labels id
             it = it + 1
         
-        ve=convert_to_sparse_matrix(phi)    
+        ves = [convert_to_sparse_matrix(phi) for phi in phis]
         if self.normalization:
-             ve = pp.normalize(ve, norm='l2', axis=1)
-        return ve
-#        return self.__normalization(phi)
+            ves = [pp.normalize(ve, norm='l2', axis=1) for ve in ves]
+        return ves
             
 #    def __normalization(self, feature_list):
 #        """
@@ -157,13 +159,13 @@ class WLCGraphKernel(GraphKernel):
 #        else :
 #            return dict(feature_list)
 
-    def computeGram(self,g_it,precomputed=None):
-        if precomputed is None:
-            precomputed=self.transform(g_it)
-        return precomputed.dot(precomputed.T).todense().tolist()
+    def computeGrams(self,g_it,ps=None):
+        if ps is None:
+            ps=self.transform(g_it)
+        return [precomputed.dot(precomputed.T).todense().tolist() for precomputed in ps]
 
     def computeKernelMatrixTrain(self,Graphs):
-        return self.computeGram(Graphs)
+        return self.computeGrams(Graphs)
     
 # if __name__=='__main__': #TODO converti in test
 #     #g=nx.Graph()
