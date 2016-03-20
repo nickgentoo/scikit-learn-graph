@@ -103,8 +103,8 @@ class ODDSTincGraphKernel(GraphKernel):
                         feature_lists[key][i] = phi
 
         for key in self.kernels:
-            for i, phi in feature_lists[key].items():
-                feature_matrices.append(self.__convert_to_sparse_matrix(phi, len(G_list)))
+            for i in range(len(feature_lists[key])):
+                feature_matrices.append(self.__convert_to_sparse_matrix(feature_lists[key][i], len(G_list)))
 
         return feature_matrices
     
