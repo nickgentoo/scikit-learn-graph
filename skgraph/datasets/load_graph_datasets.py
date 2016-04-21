@@ -23,7 +23,8 @@ from scipy.sparse import csr_matrix
 from ioskgraph import load_target
 from ..graph import instance_to_graph
 from sklearn.datasets.base import Bunch
-from obabel import obabel_to_eden
+#TODO import openbabel only if needed
+#from obabel import obabel_to_eden
 def convert_to_sparse_matrix(km):
     # translate dictionary to Compressed Sparse Row matrix
         if len(km) == 0:
@@ -73,6 +74,7 @@ def load_graphs_MUTAG():
         'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
         sample.
     """
+    from obabel import obabel_to_eden
     input_target_url='http://www.math.unipd.it/~nnavarin/datasets/MUTAG/mutag_188_target.txt'
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/MUTAG/mutag_188_data.can'
     _target=load_target(input_target_url)
@@ -99,6 +101,7 @@ def load_graphs_CPDB():
     input_target_url='http://www.math.unipd.it/~nnavarin/datasets/CPDB/mutagen_labels.tab'
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/CPDB/mutagen_smile.can'
     _target=load_target(input_target_url)
+    from obabel import obabel_to_eden
     g_it=obabel_to_eden(input = input_data_url,file_type ='smi')
 
     gra=[i for i in g_it]
@@ -122,6 +125,7 @@ def load_graphs_AIDS():
     input_target_url='http://www.math.unipd.it/~nnavarin/datasets/AIDS/CAvsCM.y'
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/AIDS/CAvsCM.can'
     _target=load_target(input_target_url)
+    from obabel import obabel_to_eden
     g_it=obabel_to_eden(input = input_data_url,file_type ='smi')
 
     gra=[i for i in g_it]
