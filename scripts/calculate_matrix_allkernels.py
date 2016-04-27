@@ -119,7 +119,7 @@ if __name__=='__main__':
     elif kernel=="WLC":
         print "Lambda ignored"
         print "Using WL fast subtree kernel with contexts"
-        ODDkernel=WLCGraphKernel(r=max_radius,normalization=normalization)
+        ODDkernel=WLCGraphKernel(r=max_radius,normalization=normalization,version=version)
     elif kernel=="WLDDK":
         print "Using ST base kernel with WL kernel"
         ODDkernel=WLDDKGraphKernel(r=max_radius,h=iterations,l=la,normalization=normalization)

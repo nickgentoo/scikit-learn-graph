@@ -16,7 +16,7 @@ import sys
 import numpy as np
 
 class ODDSTincGraphKernel(GraphKernel):
-    def __init__(self, r =3, l =1, normalization =True, version =1, ntype =0, nsplit =0, kernels =[]):
+    def __init__(self, r =3, l =1, normalization =True, version =1, ntype =0, nsplit =0, kernels =[], buckets =True):
         """
         Constructor
         @type r: integer number
@@ -47,7 +47,7 @@ class ODDSTincGraphKernel(GraphKernel):
         self.__oddkfeatsymbol='*'
         self.__version=version
         self.decomp = False
-        self.buckets = True
+        self.buckets = buckets
     
     def transform(self, G_list, n_jobs = 1, approximated=True):
         raise "Not implemented"
