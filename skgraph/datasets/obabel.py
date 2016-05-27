@@ -20,7 +20,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
-import openbabel as ob
+import openbabel
 import pybel
 import json
 import networkx as nx
@@ -66,7 +66,7 @@ def obabel_to_networkx( mol ):
     #bonds
         edges = []
     bondorders = []
-    for bond in ob.OBMolBondIter(mol.OBMol):
+    for bond in openbabel.OBMolBondIter(mol.OBMol):
         label = str(bond.GetBO())
         g.add_edge( bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), label = label )
     return g
