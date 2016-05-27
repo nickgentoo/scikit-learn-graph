@@ -1,7 +1,7 @@
 __author__ = "Nicolo' Navarin"
 
 import sys
-from skgraph.kernel.ODDCLSTGraphKernelLists import ODDCLGraphKernel
+from skgraph.kernel.ODDCLSTGraphKernel import ODDCLGraphKernel
 from skgraph.datasets import load_graph_datasets as datasets
 
 if __name__=='__main__':
@@ -44,7 +44,7 @@ if __name__=='__main__':
 
     ODDkernel=ODDCLGraphKernel(r=max_radius,l=la)
     #print ODDkernel.kernelFunctionFast(g_it.graphs[0],g_it.graphs[1])    
-    GM=ODDkernel.computeKernelMatrix([g_it.graphs[i] for i in range(51)]) #Parallel ,njobs
+    GM=ODDkernel.computeKernelMatrix([g_it.graphs) #Parallel ,njobs
     #GM=ODDkernel.computeKernelMatrixParallel(g_it.graphs,njobs) #Parallel ,njobs
     #GM=ODDkernel.computeKernelMatrixFeatureVectorParallel(g_it.graphs,njobs) #Parallel ,njobs
 
@@ -56,6 +56,6 @@ if __name__=='__main__':
         GMsvm[i]=[i+1]
         GMsvm[i].extend(GM[i])
     from sklearn import datasets
-    #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
-    datasets.dump_svmlight_file(GMsvm,[g_it.target[i] for i in range(51)], name+".svmlight")
+    datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
+    #datasets.dump_svmlight_file(GMsvm,[g_it.target[i] for i in range(51)], name+".svmlight")
     #print GM
