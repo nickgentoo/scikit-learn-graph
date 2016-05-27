@@ -38,7 +38,7 @@ if __name__=='__main__':
     name=str(sys.argv[4])
     kernel=sys.argv[5]
     #FIXED PARAMETERS
-    normalization=True   
+    normalization=False 
     
     if dataset=="CAS":
         print "Loading bursi(CAS) dataset"        
@@ -58,6 +58,8 @@ if __name__=='__main__':
     elif dataset=="NCI109":
         print "Loading NCI109 dataset"        
         g_it=load_graph_datasets.load_graphs_NCI109()
+    elif dataset=="MUTAG":
+	g_it=load_graph_datasets.load_graphs_MUTAG()
     else:
         print "Unknown dataset name"
      

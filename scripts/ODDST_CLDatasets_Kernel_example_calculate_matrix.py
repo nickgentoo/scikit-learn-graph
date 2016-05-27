@@ -24,7 +24,19 @@ if __name__=='__main__':
         g_it=load_graph_datasets.load_graphs_proteins()       
     elif dataset=="synthetic":
         print "Loading synthetic dataset"        
-        g_it=load_graph_datasets.load_graphs_synthetic()   
+        g_it=load_graph_datasets.load_graphs_synthetic() 
+    elif dataset=="BZR":
+        print "Loading BZR dataset"        
+        g_it=load_graph_datasets.load_graphs_BZR()   
+    elif dataset=="COX2":
+        print "Loading COX2 dataset"        
+        g_it=load_graph_datasets.load_graphs_COX2()   
+    elif dataset=="DHFR":
+        print "Loading DHFR dataset"        
+        g_it=load_graph_datasets.load_graphs_DHFR()     
+    elif dataset=="PROTEINS_full":
+        print "Loading PROTEINS_full dataset"        
+        g_it=load_graph_datasets.load_graphs_PROTEINS_full() 
     else:
         sys.exit( "ERROR: no dataset named "+dataset)
     print "labels",g_it.labels
