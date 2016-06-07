@@ -56,6 +56,29 @@ def dispatch(dataset):
     elif dataset=="Chemical_reduced":
         print "Loading LEUK40OV41LEUK47OV50 REDUCED dataset"        
         g_it=load_graphs_LEUK40OV41LEUK47OV50_reduced()
+    elif dataset=="MUTAG":
+	g_it=load_graph_datasets.load_graphs_MUTAG()
+    elif dataset=="enzymes":
+        print "Loading enzymes dataset"        
+        g_it=load_graph_datasets.load_graphs_enzymes()
+    elif dataset=="proteins":
+        print "Loading proteins dataset"        
+        g_it=load_graph_datasets.load_graphs_proteins()       
+    elif dataset=="synthetic":
+        print "Loading synthetic dataset"        
+        g_it=load_graph_datasets.load_graphs_synthetic() 
+    elif dataset=="BZR":
+        print "Loading BZR dataset"        
+        g_it=load_graph_datasets.load_graphs_BZR()   
+    elif dataset=="COX2":
+        print "Loading COX2 dataset"        
+        g_it=load_graph_datasets.load_graphs_COX2()   
+    elif dataset=="DHFR":
+        print "Loading DHFR dataset"        
+        g_it=load_graph_datasets.load_graphs_DHFR()     
+    elif dataset=="PROTEINS_full":
+        print "Loading PROTEINS_full dataset"        
+        g_it=load_graph_datasets.load_graphs_PROTEINS_full() 
     else:
         print "Unknown dataset name"
     return g_it
