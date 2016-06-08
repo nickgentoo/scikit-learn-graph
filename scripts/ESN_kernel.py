@@ -39,25 +39,64 @@ if __name__=='__main__':
     normalization=True
     #working with Chemical
     g_it=load_graph_datasets.dispatch(dataset)
-     
+    
+        #generate one-hot encoding
+    Features=g_it.label_dict
+    tot = len(Features)+2
+    print "Total number of labels", tot
+    _letters=[]    
+    _one_hot=[]
+    for key,n in Features.iteritems():
+        #print "key",key,"n", n
+        #generare numpy array, np.zeros((dim))[n]=1
+        a=np.zeros((tot))
+        a[n-1]=1
+        _one_hot.append(a)
+        #_one_hot.append("enc"+str(n))
+        #_one_hot.append(' '.join(['0']*(n-1) + ['1'] + ['0']*(tot-n)))
+        _letters.append(key)
+    a=np.zeros((tot))
+    a[tot-2]=1
+    _one_hot.append(a)
+    #_one_hot.append("enc"+str(tot-1))
+    a=np.zeros((tot))
+    a[tot-1]=1
+    _one_hot.append(a)
+
+    #_one_hot.append("enc"+str(tot))
+
+    #_one_hot.append(' '.join(['0']*(tot-2) + ['1'] + ['0']*(1)))
+    #_one_hot.append(' '.join(['0']*(tot-1) + ['1'] + ['0']*(0)))
+    _letters.append("P")
+    _letters.append("N")
+    one_hot_encoding = dict(zip(_letters, _one_hot))
+    
+    #At this point, one_hot_encoding contains the encoding for each symbol in the alphabet
     if kernel=="WL":
         print "Lambda ignored"
         print "Using WL fast subtree kernel"
         Vectorizer=WLVectorizer(r=max_radius,normalization=normalization)
     elif kernel=="ODDST":
         print "Using ST kernel"
-        Vectorizer=ODDSTVectorizer(r=max_radius,l=la,normalization=normalization)
+        Vectorizer=ODDSTVectorizer(r=max_radius,l=la,normalization=normalization, one_hot_encoding=one_hot_encoding)
     elif kernel=="NSPDK":
         print "Using NSPDK kernel, lambda parameter interpreted as d"
         Vectorizer=NSPDKVectorizer(r=max_radius,d=int(la),normalization=normalization)
     else:
         print "Unrecognized kernel"
+    #TODO the C parameter should probably be optimized
 
+
+    #print zip(_letters, _one_hot)
+    #exit()
     PassiveAggressive = PAC(C=0.01)       
-    features=Vectorizer.transform([g_it.graphs[i] for i in xrange(50)]) #Parallel ,njobs
+    features,list_for_deep=Vectorizer.transform([g_it.graphs[i] for i in xrange(50)]) #Parallel ,njobs
     errors=0    
-    for i in xrange(features[0].shape[0]): 
-        ex=features[0][i]
+    for i in xrange(features.shape[0]): 
+        #i-th example
+        ex=features[i]
+        #list_for_deep=features[1][i]
+        print list_for_deep[i]
         if i!=0:
             #W_old contains the model at the preceeding step
             # Here we want so use the deep network to predict the W values of the features 
@@ -82,22 +121,12 @@ if __name__=='__main__':
                 print "Error",errors," on example",i
         #print features[0][i]
         #print features[0][i].shape
-        f=features[0][i,:]
+        #f=features[0][i,:]
         #print f.shape
         #print f.shape
         #print g_it.target[i]    
         #third parameter is compulsory just for the first call
-        PassiveAggressive.partial_fit(f,np.array([g_it.target[i]]),np.unique(g_it.target))
+        PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
         W_old=PassiveAggressive.coef_
-    #print GM
-#    GMsvm=[]    
-#    for i in xrange(len(GM)):
-#        GMsvm.append([])
-#        GMsvm[i]=[i+1]
-#        GMsvm[i].extend(GM[i])
-#    #print GMsvm
-#    from sklearn import datasets
-#    print "Saving Gram matrix"
-#    #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
-#    datasets.dump_svmlight_file(np.array(GMsvm),g_it.target, name+".svmlight")
-#   
+        # PASSO DI APPRENDIMENTO DELLA DEEP        
+           

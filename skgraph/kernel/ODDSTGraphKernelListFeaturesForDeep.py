@@ -25,7 +25,7 @@ from ..graph.GraphTools import generateDAGOrdered
 from ..graph.GraphTools import orderDAGvertices
 from operator import itemgetter
 from ..graph.GraphTools import drawGraph
-from KernelTools import convert_to_sparse_matrix
+from KernelTools import convert_to_sparse_matrix, convert_to_sparse_matrix_list
 from KernelTools import convert_to_sparse_matrix_enc
 
 from sklearn.preprocessing import normalize
@@ -55,7 +55,7 @@ class ODDSTGraphKernel(GraphKernel):
         def getElement(self,elem):
             return self.__map.get(elem)
     
-    def __init__(self, r = 3, l = 1, normalization = True):
+    def __init__(self, r = 3, l = 1, normalization = True, one_hot_encoding={}):
         """
         Constructor
         @type r: integer number
@@ -70,6 +70,7 @@ class ODDSTGraphKernel(GraphKernel):
         @type show: boolean
         @param show: If true shows graphs and DAGs during computation
         """
+        self.one_hot_encoding=one_hot_encoding
         self.Lambda=l
         self.max_radius=r
         self.normalization=normalization
@@ -256,7 +257,7 @@ class ODDSTGraphKernel(GraphKernel):
         
         Dict_features, Dict_lists = self.getFeaturesApproximated(G_orig,MapEncToId)        
         feature_list.update({(instance_id,k):v for (k,v) in Dict_features.items()})
-        Lists_list.update({(instance_id,k):v for (k,v) in Dict_lists.items()})
+        Lists_list.update({instance_id:{k:v  for (k,v) in Dict_lists.iteritems()} })
 
 #        ve=convert_to_sparse_matrix(feature_list)    
 #        if self.normalization:
@@ -584,7 +585,7 @@ class ODDSTGraphKernel(GraphKernel):
         @rtype: dictionary
         @return: the encoding-feature dictionary
         """
-        print "Approximated Features"
+        #print "Approximated Features"
         Dict_features={}
         Dict_lists={}
         for v in G.nodes():
@@ -621,13 +622,13 @@ class ODDSTGraphKernel(GraphKernel):
                             enc=str(DAG.node[u]['label'])
                             
                             MapNodeToProductionsID[u].append(enc)
-                            MapNodeToLists[u][depth]=[str(DAG.node[u]['label'])]
+                            MapNodeToLists[u][depth]=[[self.one_hot_encoding[str(DAG.node[u]['label'])]]]
 
                             
                             frequency=0
                             if max_child_height==0:
                                 frequency=maxLevel - DAG.node[u]['depth']
-                            print enc, MapNodeToLists[u][depth]
+                            #print enc, MapNodeToLists[u][depth]
                             Dict_lists[enc]=  MapNodeToLists[u][depth]
                             if Dict_features.get(enc) is None:
                                 Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
@@ -642,7 +643,7 @@ class ODDSTGraphKernel(GraphKernel):
                         else:
                             size=0
                             encoding=str(DAG.node[u]['label'])
-                            new_string=str(DAG.node[u]['label'])
+                            new_string=[ self.one_hot_encoding[str(DAG.node[u]['label'])]]
 
                             vertex_label_id_list=[]#list[string]
                             min_freq_children=sys.maxint
@@ -664,7 +665,8 @@ class ODDSTGraphKernel(GraphKernel):
                             encoding+=self.__startsymbol+str(vertex_label_id_list[0])
                             #print "child 0",child_hash_list[vertex_label_id_list[0]]
                             #new_string+=self.__startsymbol+''.join(child_hash_list[vertex_label_id_list[0]])
-                            new_string+=self.__startsymbol+child_hash_list[vertex_label_id_list[0]][-1]
+                            #new_string+=self.__startsymbol+child_hash_list[vertex_label_id_list[0]][-1]
+                            new_string+=[self.one_hot_encoding['P']]+child_hash_list[vertex_label_id_list[0]][-1]
 
                             MapNodeToLists[u][depth]+=child_hash_list[vertex_label_id_list[0]]
 
@@ -673,21 +675,22 @@ class ODDSTGraphKernel(GraphKernel):
                                 #new_string+=self.__conjsymbol+''.join(child_hash_list[vertex_label_id_list[i]])
                                 #print "child",i, child_hash_list[vertex_label_id_list[i]]
                                 
-                                new_string+=self.__conjsymbol+child_hash_list[vertex_label_id_list[i]][-1]
+                                new_string+=child_hash_list[vertex_label_id_list[i]][-1]
+                                #new_string+=self.__conjsymbol+child_hash_list[vertex_label_id_list[i]][-1]
                                 
                                 MapNodeToLists[u][depth]+=child_hash_list[vertex_label_id_list[i]]
 
                                 feature_list.append(child_hash_list[vertex_label_id_list[i]])
                                 #print new_string
                             encoding+=self.__endsymbol
-                            new_string+=self.__endsymbol
+                            new_string+=[self.one_hot_encoding['N'] ]
 
                             #TEST  encoding=hash(encoding)
 #                            if not u in MapNodeToLists:
 #                                MapNodeToLists[u]=[[new_string]]
 #                            else:
                             MapNodeToLists[u][depth]+=[new_string]
-                            print encoding, MapNodeToLists[u][depth]
+                            #print encoding, MapNodeToLists[u][depth]
                             Dict_lists[encoding]=  MapNodeToLists[u][depth]
 
 
