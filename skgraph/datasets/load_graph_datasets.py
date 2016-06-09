@@ -207,11 +207,13 @@ def load_graphs_NCI1():
     input_target_url='http://www.math.unipd.it/~nnavarin/datasets/NCI1/NCI1_labels.txt'
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/NCI1/NCI1_graphs.gspan'
     _target=load_target(input_target_url)
-    g_it=instance_to_graph(input = input_data_url)
+    label_dict={}
+    g_it=instance_to_graph(input = input_data_url,label_dict=label_dict)
 
     print 'Loaded NCI1 graph dataset for graph classification.'
     return Bunch(graphs=[i for i in g_it],
     target=_target,
+    label_dict=label_dict,
     labels=True,
     veclabels=False)
 
@@ -577,12 +579,15 @@ def load_graphs_LEUK40OV41LEUK47OV50_reduced():
     input_target_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_LEUK40OV41LEUK47OV50/labels_reduced_60k.txt'
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_LEUK40OV41LEUK47OV50/stream_reduced_60k.can'
     _target=load_target(input_target_url)
-    g_it=obabel_to_eden(input = input_data_url,file_type ='can')
+    label_dict={}
+    counter=[1]
+    g_it=obabel_to_eden(input = input_data_url,file_type ='can',dict_labels=label_dict,counter=counter)
 
     gra=[i for i in g_it]
     print 'Loaded Chemical graph dataset for graph classification.'
     print len(gra),'graphs.'
     return Bunch(graphs=gra,
+    label_dict=label_dict,
     target=_target,
     labels=True,
     veclabels=False)

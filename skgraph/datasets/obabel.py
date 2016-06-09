@@ -29,7 +29,7 @@ import tempfile
 import ioskgraph
 import unicodedata
 
-def obabel_to_eden(input, file_type = 'sdf', **options):
+def obabel_to_eden(input, file_type = 'sdf',dict_labels={}, counter=[1], **options):
     """
     Takes a string list in sdf format and yields networkx graphs.
     Parameters
@@ -37,6 +37,7 @@ def obabel_to_eden(input, file_type = 'sdf', **options):
     input : string
         A pointer to the data source.
     """
+    
     f = ioskgraph.read(input)
     for line in f:
         if line.strip():
@@ -45,15 +46,16 @@ def obabel_to_eden(input, file_type = 'sdf', **options):
             #print mol
             #remove hydrogens
             #mol.removeh()
-            G = obabel_to_networkx(mol)
+            G = obabel_to_networkx(mol,dict_labels,counter)
             if len(G):
                 yield G
 
 
-def obabel_to_networkx( mol ):
+def obabel_to_networkx( mol, dict_labels={},  counter=[1]):
     """
     Takes a pybel molecule object and converts it into a networkx graph.
     """
+    #print "ObabelToNBetworkx, counter = ", counter 
     g = nx.Graph()
     g.graph['ordered']=False
 
@@ -61,10 +63,13 @@ def obabel_to_networkx( mol ):
     for atom in mol:
         #label = str(atom.type)
         label = str(atom.atomicnum)
-
+        if label not in dict_labels:
+            #print "new label", label, "key", counter
+            dict_labels[label]= counter[0]
+            counter[0]+=1
         g.add_node(atom.idx, label=label, viewpoint=True)
     #bonds
-        edges = []
+    edges = []
     bondorders = []
     for bond in openbabel.OBMolBondIter(mol.OBMol):
         label = str(bond.GetBO())
