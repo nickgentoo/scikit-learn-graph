@@ -25,7 +25,7 @@ from ..graph.GraphTools import generateDAGOrdered
 from ..graph.GraphTools import orderDAGvertices
 from operator import itemgetter
 from ..graph.GraphTools import drawGraph
-from KernelTools import convert_to_sparse_matrix, convert_to_sparse_matrix_list
+from KernelTools import convert_to_sparse_matrix
 from KernelTools import convert_to_sparse_matrix_enc
 
 from sklearn.preprocessing import normalize
