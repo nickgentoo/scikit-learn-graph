@@ -1,8 +1,8 @@
 Tutorial on how to run Online ESN learning
 
 From the main scikit-learn-graph directory run the following command
-python -m scripts/ESN_kernel Chemical_reduced radius lambda output_file kernel
+python -m scripts/ESN_kernel Chemical_reduced radius lambda output_file kernel number_hidden_units
 
 For example,
-python -m scripts/ESN_kernel Chemical_reduced 1 1 a ODDST
+python -m scripts/ESN_kernel Chemical_reduced 1 1 a ODDST 1000
 
