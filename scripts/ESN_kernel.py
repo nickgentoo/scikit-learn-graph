@@ -95,16 +95,29 @@ if __name__=='__main__':
     PassiveAggressive = PAC(C=0.01)       
     features,list_for_deep=Vectorizer.transform([g_it.graphs[i] for i in xrange(50)]) #Parallel ,njobs
     errors=0    
-    tp,fp,tn,fn=0
+    tp=0
+    fp=0
+    tn=0
+    fn=0
     predictions=[0]*50
     correct=[0]*50
+    
+    
 
     model=ESN.EchoStateNetwork(tot,nHidden,1)
+    netDataSet=[]
+    netTargetSet=[]
     for i in xrange(features.shape[0]): 
         #i-th example
         ex=features[i]
-        #list_for_deep=features[1][i]
-        print type(list_for_deep[i].items()[0])
+        #------------ESN dataset--------------------#
+	#print features
+        #for key,rowDict in list_for_deep[i].iteritems():
+	  #target=features[key]
+	  #for festuresList in rowDict:
+	      #netDataSet.append(np.array(festuresList)).shape
+        #raw_input()
+        #------------ESN dataset--------------------#
         if i!=0:
             #W_old contains the model at the preceeding step
             # Here we want so use the deep network to predict the W values of the features 
