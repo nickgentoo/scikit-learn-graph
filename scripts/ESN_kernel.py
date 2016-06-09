@@ -119,8 +119,9 @@ if __name__=='__main__':
         for key,rowDict in list_for_deep[i].iteritems():
             target=features[(i,key)]
             print "key", key, "target", target
-	  #for festuresList in rowDict:
-	      #netDataSet.append(np.array(festuresList)).shape
+	    #for festuresList in rowDict:
+		#netDataSet.append(np.array(festuresList))
+		#netTargetSet.append(np.asaray([target]))
         #raw_input()
         #------------ESN dataset--------------------#
         if i!=0:
