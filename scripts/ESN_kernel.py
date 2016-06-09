@@ -20,6 +20,8 @@ You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 import sys
+sys.path.insert(0, 'ESN/Net')
+import ESN_2p0_4Kernel as ESN
 from skgraph.feature_extraction.graph.ODDSTVectorizerListFeaturesForDeep import ODDSTVectorizer
 from sklearn.linear_model import PassiveAggressiveClassifier as PAC
 from skgraph.datasets import load_graph_datasets
@@ -27,14 +29,15 @@ import numpy as np
 
 if __name__=='__main__':
     if len(sys.argv)<1:
-        sys.exit("python ODDKernel_example.py dataset r l filename kernel")
+        sys.exit("python ODDKernel_example.py dataset r l filename kernel nhidden")
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
-    #hashs=int(sys.argv[3])
+    hashs=int(sys.argv[3])
     njobs=1
     name=str(sys.argv[4])
     kernel=sys.argv[5]
+    nHidden=int(sys.argv[6])
     #FIXED PARAMETERS
     normalization=True
     #working with Chemical
@@ -95,16 +98,18 @@ if __name__=='__main__':
     tp,fp,tn,fn=0
     predictions=[0]*50
     correct=[0]*50
+
+    model=ESN.EchoStateNetwork(tot,nHidden,1)
     for i in xrange(features.shape[0]): 
         #i-th example
         ex=features[i]
         #list_for_deep=features[1][i]
-        print list_for_deep[i]
+        print type(list_for_deep[i].items()[0])
         if i!=0:
             #W_old contains the model at the preceeding step
             # Here we want so use the deep network to predict the W values of the features 
             # present in ex
-            #W=ESN(predict_weights)            
+            #W=model.computeOut()#ESN(predict_weights)            
             W=W_old #dump line
             #set the weights of PA to the predicted values
             PassiveAggressive.coef_=W
