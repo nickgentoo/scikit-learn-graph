@@ -19,14 +19,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
+import sys
+import ctypes
 from graphKernel import GraphKernel
 from ..graph.GraphTools import generateDAG
 from ..graph.GraphTools import generateDAGOrdered
 from ..graph.GraphTools import orderDAGvertices
 from operator import itemgetter
 from ..graph.GraphTools import drawGraph
+from KernelTools import _dict_to_csr
 from KernelTools import convert_to_sparse_matrix
-from KernelTools import convert_to_sparse_matrix_enc
 
 from sklearn.preprocessing import normalize
 import networkx as nx
@@ -326,6 +328,7 @@ class ODDSTGraphKernel(GraphKernel):
         """
         feature_dict={}
         Lists_list={}
+        Lists_list1={}
 
         MapEncToId=None
         if not keepdictionary:
@@ -338,10 +341,24 @@ class ODDSTGraphKernel(GraphKernel):
 #            return (convert_to_sparse_matrix( feature_dict, MapEncToId ),feature_dict)
 #        else:
 #            return convert_to_sparse_matrix( feature_dict, MapEncToId )
-        ve=convert_to_sparse_matrix(feature_dict)    
+        mapenctoid={}
+        ve=convert_to_sparse_matrix(feature_dict,mapenctoid)   
+        #print mapenctoid
+        #modify featurelist in order to have the same keys
+        for key,value in Lists_list.iteritems():
+            innerList={}
+            for key1,value1 in Lists_list[key].iteritems():
+                innerList[mapenctoid[key1]]=value1
+            Lists_list1[key]=innerList
+           # Lists_list1[(key[0],mapenctoid[key[1]])]=value
+
+            
+        
+        #ve=_dict_to_csr(feature_dict)   
+
         if self.normalization:
              ve = normalize(ve, norm='l2', axis=1)
-        return ve, Lists_list
+        return ve, Lists_list1
     
     def transform_treemapping(self, G_list, n_jobs = -1, approximated=True, keepdictionary=False):
         """
@@ -618,8 +635,8 @@ class ODDSTGraphKernel(GraphKernel):
                         else :
                             MapNodeToLists[u].append([])
                         if depth==0:
-                            #TEST enc=hash(str(DAG.node[u]['label']))
-                            enc=str(DAG.node[u]['label'])
+                            enc=hash(str(DAG.node[u]['label']))
+                            #TEST enc=str(DAG.node[u]['label'])
                             
                             MapNodeToProductionsID[u].append(enc)
                             MapNodeToLists[u][depth]=[[self.one_hot_encoding[str(DAG.node[u]['label'])]]]
@@ -685,7 +702,7 @@ class ODDSTGraphKernel(GraphKernel):
                             encoding+=self.__endsymbol
                             new_string+=[self.one_hot_encoding['N'] ]
 
-                            #TEST  encoding=hash(encoding)
+                            encoding=hash(encoding)
 #                            if not u in MapNodeToLists:
 #                                MapNodeToLists[u]=[[new_string]]
 #                            else:

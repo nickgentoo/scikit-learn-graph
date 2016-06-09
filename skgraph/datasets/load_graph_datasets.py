@@ -586,7 +586,7 @@ def load_graphs_LEUK40OV41LEUK47OV50_reduced():
     gra=[i for i in g_it]
     print 'Loaded Chemical graph dataset for graph classification.'
     print len(gra),'graphs.'
-    return Bunch(graphs=gra,
+    return Bunch(graphs=[gra[i] for i in range(51)],
     label_dict=label_dict,
     target=_target,
     labels=True,

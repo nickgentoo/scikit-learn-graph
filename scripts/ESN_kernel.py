@@ -107,13 +107,18 @@ if __name__=='__main__':
     model=ESN.EchoStateNetwork(tot,nHidden,1)
     netDataSet=[]
     netTargetSet=[]
+    #print features
+    print list_for_deep.keys()
+
     for i in xrange(features.shape[0]): 
         #i-th example
-        ex=features[i]
         #------------ESN dataset--------------------#
-	#print features
-        #for key,rowDict in list_for_deep[i].iteritems():
-	  #target=features[key]
+        ex=features[i] 
+        #print "ex", ex
+        #print list_for_deep[i].keys()
+        for key,rowDict in list_for_deep[i].iteritems():
+            target=features[(i,key)]
+            print "key", key, "target", target
 	  #for festuresList in rowDict:
 	      #netDataSet.append(np.array(festuresList)).shape
         #raw_input()
