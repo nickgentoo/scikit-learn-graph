@@ -9,7 +9,7 @@ __status__ = "Production"
 
 import numpy as np
 from operator import itemgetter
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, coo_matrix
 
 def computeFeaturesWeights(svindexes,coeflist,dictfeatures):
     """
@@ -36,7 +36,44 @@ def topWeights(number,weights,positive=True):
     else:
         listweights=listweights[:number]
     return dict(listweights)
-
+    
+def convert_to_sparse_matrix_enc(feature_dict, MapEncToId=None):
+        """
+        Function that convert the feature vector from dictionary to sparse matrix
+        @type feature_dict: Dictionary
+        @param feature_dict: a feature vector
+        
+        @type MapEncToId: self.UniqueMap
+        @param MapEncToId: Map between feature's encodings and integer values
+        
+        @rtype: scipy.sparse.csr_matrix
+        @return: the feature vector in sparse form
+        """
+        if len(feature_dict) == 0:
+            raise Exception('ERROR: something went wrong, empty feature_dict.')
+        data = feature_dict.values()
+        row, col = [], []
+        if not MapEncToId is None:
+            for i, j in feature_dict.iterkeys():
+                row.append( i )
+                col.append( MapEncToId[j] )
+            X = csr_matrix( (data,(row,col)), shape = (max(row)+1, max(col)+1))
+            return X, MapEncToId
+        else:
+            for i, j in feature_dict.iterkeys():
+                row.append( i )
+                col.append( j )
+            MapEncToId={}
+            idenc=0
+            for enc in np.unique(col):
+                MapEncToId[enc]=idenc
+                idenc+=1
+            colid=[]
+            for enc in col:
+                colid.append(MapEncToId[enc])
+            X = csr_matrix( (data,(row,colid)), shape = (max(row)+1, max(colid)+1))
+            return X, MapEncToId
+            
 def convert_to_sparse_matrix(feature_dict, MapEncToId=None):
         """
         Function that convert the feature vector from dictionary to sparse matrix
@@ -56,7 +93,7 @@ def convert_to_sparse_matrix(feature_dict, MapEncToId=None):
         if not MapEncToId is None:
             for i, j in feature_dict.iterkeys():
                 row.append( i )
-                col.append( MapEncToId.getElement(j) )
+                col.append( MapEncToId[j]) 
             X = csr_matrix( (data,(row,col)), shape = (max(row)+1, max(col)+1))
             return X
         else:
@@ -72,4 +109,40 @@ def convert_to_sparse_matrix(feature_dict, MapEncToId=None):
             for enc in col:
                 colid.append(MapEncToId[enc])
             X = csr_matrix( (data,(row,colid)), shape = (max(row)+1, max(colid)+1))
+            return X
+def convert_to_sparse_matrix_list(feature_dict, MapEncToId=None):
+        """
+        Function that convert the feature vector from dictionary to sparse matrix
+        @type feature_dict: Dictionary
+        @param feature_dict: a feature vector
+        
+        @type MapEncToId: self.UniqueMap
+        @param MapEncToId: Map between feature's encodings and integer values
+        
+        @rtype: scipy.sparse.csr_matrix
+        @return: the feature vector in sparse form
+        """
+        if len(feature_dict) == 0:
+            raise Exception('ERROR: something went wrong, empty feature_dict.')
+        data = feature_dict.values()
+        row, col = [], []
+        if not MapEncToId is None:
+            for i, j in feature_dict.iterkeys():
+                row.append( i )
+                col.append( MapEncToId[j]) 
+            X = csr_matrix( (data,(row,col)), shape = (max(row)+1, max(col)+1), dtype=np.dtype(object))
+            return X
+        else:
+            for i, j in feature_dict.iterkeys():
+                row.append( i )
+                col.append( j )
+            MapEncToId={}
+            idenc=0
+            for enc in np.unique(col):
+                MapEncToId[enc]=idenc
+                idenc+=1
+            colid=[]
+            for enc in col:
+                colid.append(MapEncToId[enc])
+            X = csr_matrix( (data,(row,colid)), shape = (max(row)+1, max(colid)+1), dtype=np.dtype(object))
             return X
