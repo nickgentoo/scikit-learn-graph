@@ -92,6 +92,9 @@ if __name__=='__main__':
     PassiveAggressive = PAC(C=0.01)       
     features,list_for_deep=Vectorizer.transform([g_it.graphs[i] for i in xrange(50)]) #Parallel ,njobs
     errors=0    
+    tp,fp,tn,fn=0
+    predictions=[0]*50
+    correct=[0]*50
     for i in xrange(features.shape[0]): 
         #i-th example
         ex=features[i]
@@ -111,8 +114,16 @@ if __name__=='__main__':
             if pred!=g_it.target[i]:
                 errors+=1
                 print "Error",errors," on example",i, "pred", score, "target",g_it.target[i]
+                if g_it.target[i]==1:
+                    fn+=1
+                else:
+                    fp+=1
+            
             else:
-                pass
+                if g_it.target[i]==1:
+                    tp+=1
+                else:
+                    tn+=1
                 #print "Correct prediction example",i, "pred", score, "target",g_it.target[i]
 
         else:
@@ -129,4 +140,6 @@ if __name__=='__main__':
         PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
         W_old=PassiveAggressive.coef_
         # PASSO DI APPRENDIMENTO DELLA DEEP        
+        
+        #calcolo statistiche
            
