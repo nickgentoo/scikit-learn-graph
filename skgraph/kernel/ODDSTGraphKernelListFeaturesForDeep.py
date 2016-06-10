@@ -20,20 +20,18 @@ You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 import sys
-import ctypes
 from graphKernel import GraphKernel
 from ..graph.GraphTools import generateDAG
 from ..graph.GraphTools import generateDAGOrdered
 from ..graph.GraphTools import orderDAGvertices
 from operator import itemgetter
-from ..graph.GraphTools import drawGraph
-from KernelTools import _dict_to_csr
-from KernelTools import convert_to_sparse_matrix
+#from ..graph.GraphTools import drawGraph
+#from KernelTools import _dict_to_csr
+from KernelTools import convert_to_sparse_matrix_for_deep
 
 from sklearn.preprocessing import normalize
 import networkx as nx
 import math
-import sys
 import numpy as np
 
 class ODDSTGraphKernel(GraphKernel):
@@ -342,7 +340,7 @@ class ODDSTGraphKernel(GraphKernel):
 #        else:
 #            return convert_to_sparse_matrix( feature_dict, MapEncToId )
         mapenctoid={}
-        ve=convert_to_sparse_matrix(feature_dict,mapenctoid)   
+        ve=convert_to_sparse_matrix_for_deep(feature_dict,mapenctoid)   
         #print mapenctoid
         #modify featurelist in order to have the same keys
         for key,value in Lists_list.iteritems():
