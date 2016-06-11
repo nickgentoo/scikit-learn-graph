@@ -15,7 +15,7 @@ class EchoStateNetwork:
     self.W=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(resevoir_dim,resevoir_dim))))
     self.W_in=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleIn, high=scaleIn,size=(input_dim,resevoir_dim))))
     self.W_fb=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(output_dim,resevoir_dim))))
-    self.W_out=theano.shared(np.random.rand(resevoir_dim,output_dim))
+    self.W_out=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(resevoir_dim,output_dim))))
     self.__theano_build__()
   
   def ECPMatrix(self,m,epsilon=0.03):
@@ -83,10 +83,11 @@ class EchoStateNetwork:
       self.sgd_step(inSeq,tarSeq,learning_rate)
       
       
-  def computeOut(self,inputSet):
+  def computeOut(self,inputSet,keyList):
     output=[]
-    for seq in inputSet:
-      output.append(self.computeOutput(seq))
+    for seq,key in zip(inputSet,keyList):
+      output.append((key,self.computeOutput(seq)[-1][0])) 
+
     return output
       
     

@@ -26,6 +26,7 @@ from skgraph.feature_extraction.graph.ODDSTVectorizerListFeaturesForDeep import 
 from sklearn.linear_model import PassiveAggressiveClassifier as PAC
 from skgraph.datasets import load_graph_datasets
 import numpy as np
+from scipy.sparse import csc_matrix
 
 if __name__=='__main__':
     if len(sys.argv)<1:
@@ -38,6 +39,7 @@ if __name__=='__main__':
     name=str(sys.argv[4])
     kernel=sys.argv[5]
     nHidden=int(sys.argv[6])
+    lr=float(sys.argv[7])
     #FIXED PARAMETERS
     normalization=True
     #working with Chemical
@@ -45,7 +47,7 @@ if __name__=='__main__':
     
         #generate one-hot encoding
     Features=g_it.label_dict
-    tot = len(Features)+2
+    tot = len(Features)+3
     print "Total number of labels", tot
     _letters=[]    
     _one_hot=[]
@@ -65,6 +67,9 @@ if __name__=='__main__':
     a=np.zeros((tot))
     a[tot-1]=1
     _one_hot.append(a)
+    
+    
+
 
     #_one_hot.append("enc"+str(tot))
 
@@ -107,29 +112,58 @@ if __name__=='__main__':
     model=ESN.EchoStateNetwork(tot,nHidden,1)
     netDataSet=[]
     netTargetSet=[]
+    netKeyList=[]
     #print features
     print list_for_deep.keys()
 
+
+    sep=np.zeros((tot))
+    sep[tot-3]=1
     for i in xrange(features.shape[0]): 
         #i-th example
         #------------ESN dataset--------------------#
-        ex=features[i] 
+        ex=features[i]
+
         #print "ex", ex
         #print list_for_deep[i].keys()
+        
         for key,rowDict in list_for_deep[i].iteritems():
             target=features[(i,key)]
-            print "key", key, "target", target
-	    #for festuresList in rowDict:
-		#netDataSet.append(np.array(festuresList))
-		#netTargetSet.append(np.asaray([target]))
-        #raw_input()
+            #print "key", key, "target", target
+            codedFt=rowDict[0][:]
+            codedTarget=[target]*len(rowDict[0])
+            netKeyList.append(key)
+	    for featuresList in rowDict[1:]:
+
+		codedTarget.extend([target]*(len(featuresList)+1))#+1 perchè c'e anche il separatore
+	        codedFt.extend([sep])
+	        codedFt.extend(featuresList)
+
+	    netDataSet.append(np.asarray(codedFt))
+	    netTargetSet.append(np.array(codedTarget).reshape(len(codedTarget),1))
+		
         #------------ESN dataset--------------------#
         if i!=0:
             #W_old contains the model at the preceeding step
             # Here we want so use the deep network to predict the W values of the features 
             # present in ex
-            #W=model.computeOut()#ESN(predict_weights)            
-            W=W_old #dump line
+   
+            RowIndex=[]
+            ColIndex=[]
+            matData=[]
+            
+
+	    netOutput=model.computeOut(netDataSet,netKeyList)#W è una lisa di tuple (key,val)
+	    #creo la matrice sparsa:
+	    for (key,val) in netOutput:
+	      RowIndex.append(0)#W deve essere è un vettore riga
+	      ColIndex.append(key)
+	      matData.append(val)
+	    W=np.asarray(csc_matrix((matData, (RowIndex, ColIndex)), shape=ex.shape).todense())
+	    
+	    #W=W_old #dump line
+
+            
             #set the weights of PA to the predicted values
             PassiveAggressive.coef_=W
             pred=PassiveAggressive.predict(ex)
@@ -161,9 +195,13 @@ if __name__=='__main__':
         #print f.shape
         #print g_it.target[i]    
         #third parameter is compulsory just for the first call
+	    
         PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
         W_old=PassiveAggressive.coef_
-        # PASSO DI APPRENDIMENTO DELLA DEEP        
+
         
+        # ESN Training
+
+        model.OnlineTrain(netDataSet,netTargetSet,lr)
         #calcolo statistiche
            
