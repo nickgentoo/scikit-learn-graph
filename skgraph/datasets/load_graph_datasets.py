@@ -580,8 +580,8 @@ def load_graphs_LEUK40OV41LEUK47OV50_reduced():
     """
     from obabel import obabel_to_eden
 
-    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_LEUK40OV41LEUK47OV50/labels_reduced_60k.txt'
-    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_LEUK40OV41LEUK47OV50/stream_reduced_60k.can'
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_LEUK40OV41LEUK47OV50/labels_reduced_101.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_LEUK40OV41LEUK47OV50/stream_reduced_101.can'
     _target=load_target(input_target_url)
     label_dict={}
     counter=[1]
