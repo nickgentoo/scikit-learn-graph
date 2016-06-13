@@ -34,7 +34,7 @@ if __name__=='__main__':
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
-    hashs=int(sys.argv[3])
+    #hashs=int(sys.argv[3])
     njobs=1
     name=str(sys.argv[4])
     kernel=sys.argv[5]
