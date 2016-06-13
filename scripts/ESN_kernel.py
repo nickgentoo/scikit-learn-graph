@@ -30,7 +30,7 @@ from scipy.sparse import csc_matrix
 
 if __name__=='__main__':
     if len(sys.argv)<1:
-        sys.exit("python ODDKernel_example.py dataset r l filename kernel nhidden")
+        sys.exit("python ODDKernel_example.py dataset r l filename kernel C nhidden learningRate")
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
@@ -38,8 +38,9 @@ if __name__=='__main__':
     njobs=1
     name=str(sys.argv[4])
     kernel=sys.argv[5]
-    nHidden=int(sys.argv[6])
-    lr=float(sys.argv[7])
+    parameterC=float(sys.argv[6])
+    nHidden=int(sys.argv[7])
+    lr=float(sys.argv[8])
     #FIXED PARAMETERS
     normalization=True
     #working with Chemical
@@ -97,7 +98,7 @@ if __name__=='__main__':
 
     #print zip(_letters, _one_hot)
     #exit()
-    PassiveAggressive = PAC(C=0.01)       
+    PassiveAggressive = PAC(C=parameterC)       
     features,list_for_deep=Vectorizer.transform(g_it.graphs) #Parallel ,njobs
     errors=0    
     tp=0

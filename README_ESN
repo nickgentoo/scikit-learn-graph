@@ -4,5 +4,5 @@ From the main scikit-learn-graph directory run the following command
 python -m scripts/ESN_kernel Chemical_reduced radius lambda output_file kernel number_hidden_units
 
 For example,
-python -m scripts/ESN_kernel Chemical_reduced 1 1 a ODDST 1000 0.001
+python -m scripts/ESN_kernel Chemical_reduced 1 1 a ODDST 0.01 500 0.001
 
