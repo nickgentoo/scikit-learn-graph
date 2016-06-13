@@ -5,7 +5,7 @@ import numpy.linalg as linalg
 import scipy.sparse 
  #TODO: creare le matrici dei pesi iniziali che rispettino la  ESP
 class EchoStateNetwork:
-  def __init__ (self,input_dim,resevoir_dim,output_dim,activation_function=T.nnet.sigmoid,activation_output=lambda x:x,scaleIn=1,scaleRes=1):
+  def __init__ (self,input_dim,resevoir_dim,output_dim,activation_function=T.nnet.sigmoid,activation_output=tensor.nnet.softmax,scaleIn=1,scaleRes=1):
     self.input_dim=input_dim
     self.resevoir_dim=resevoir_dim
     self.output_dim=output_dim

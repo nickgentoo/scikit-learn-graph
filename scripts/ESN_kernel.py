@@ -192,12 +192,13 @@ if __name__=='__main__':
                     fn+=1
                 else:
                     fp+=1
+	print i
         if i%50==0 and i!=0:
                 #output performance statistics every 50 examples
                 BER = 0.5 * (( float(fp) / (tn+fp))  +  (float(fn) / (tp+fn)))
     
                 print "1-BER Window esempio ",i, (1.0 - BER)
-                BERtotal.append(1.0 - BER);
+                BERtotal.append(1.0 - BER)
                 tp = 0
                 fp = 0
                 fn = 0
