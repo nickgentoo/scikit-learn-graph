@@ -128,22 +128,7 @@ if __name__=='__main__':
         #print "ex", ex
         #print list_for_deep[i].keys()
         
-        for key,rowDict in list_for_deep[i].iteritems():
-            target=features[(i,key)]
-            #print "key", key, "target", target
-            codedFt=rowDict[0][:]
-            codedTarget=[target]*len(rowDict[0])
-            netKeyList.append(key)
-	    for featuresList in rowDict[1:]:
-
-		codedTarget.extend([target]*(len(featuresList)+1))#+1 perchè c'e anche il separatore
-	        codedFt.extend([sep])
-	        codedFt.extend(featuresList)
-
-	    netDataSet.append(np.asarray(codedFt))
-	    netTargetSet.append(np.array(codedTarget).reshape(len(codedTarget),1))
-		
-        #------------ESN dataset--------------------#
+       
         if i!=0:
             #W_old contains the model at the preceeding step
             # Here we want so use the deep network to predict the W values of the features 
@@ -154,13 +139,24 @@ if __name__=='__main__':
             matData=[]
             
 
+	    
+	    
+	    
+	    
+	    
 	    netOutput=model.computeOut(netDataSet,netKeyList)#W è una lisa di tuple (key,val)
 	    #creo la matrice sparsa:
+	    
 	    for (key,val) in netOutput:
 	      RowIndex.append(0)#W deve essere è un vettore riga
 	      ColIndex.append(key)
 	      matData.append(val)
+		
+		
+	    
 	    W=np.asarray(csc_matrix((matData, (RowIndex, ColIndex)), shape=ex.shape).todense())
+	    
+	    
 	    
 	    #W=W_old #dump line
 
@@ -193,7 +189,7 @@ if __name__=='__main__':
                     fn+=1
                 else:
                     fp+=1
-	print i
+	#print i
         if i%50==0 and i!=0:
                 #output performance statistics every 50 examples
                 BER = 0.5 * (( float(fp) / (tn+fp))  +  (float(fn) / (tp+fn)))
@@ -215,7 +211,25 @@ if __name__=='__main__':
         PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
         W_old=PassiveAggressive.coef_
 
-        
+
+	for key,rowDict in list_for_deep[i].iteritems():
+
+	  target=W_old[0,key]
+	    
+	  #print "key", key, "target", target
+	  codedFt=rowDict[0][:]
+	  codedTarget=[target]*len(rowDict[0])
+	  netKeyList.append(key)
+	  for featuresList in rowDict[1:]:
+
+	      codedTarget.extend([target]*(len(featuresList)+1))#+1 perchè c'e anche il separatore
+	      codedFt.extend([sep])
+	      codedFt.extend(featuresList)
+
+	  netDataSet.append(np.asarray(codedFt))
+	  netTargetSet.append(np.array(codedTarget).reshape(len(codedTarget),1))
+		
+        #------------ESN dataset--------------------#
         # ESN Training
 
         model.OnlineTrain(netDataSet,netTargetSet,lr)

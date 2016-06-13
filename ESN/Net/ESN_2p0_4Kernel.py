@@ -5,7 +5,7 @@ import numpy.linalg as linalg
 import scipy.sparse 
  #TODO: creare le matrici dei pesi iniziali che rispettino la  ESP
 class EchoStateNetwork:
-  def __init__ (self,input_dim,resevoir_dim,output_dim,activation_function=T.nnet.sigmoid,activation_output=T.nnet.softmax,scaleIn=5,scaleRes=5):
+  def __init__ (self,input_dim,resevoir_dim,output_dim,activation_function=T.nnet.sigmoid,activation_output=T.arctan,scaleIn=1,scaleRes=1):
     self.input_dim=input_dim
     self.resevoir_dim=resevoir_dim
     self.output_dim=output_dim
@@ -15,7 +15,7 @@ class EchoStateNetwork:
     self.W=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(resevoir_dim,resevoir_dim))))
     self.W_in=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleIn, high=scaleIn,size=(input_dim,resevoir_dim))))
     self.W_fb=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(output_dim,resevoir_dim))))
-    self.W_out=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(resevoir_dim,output_dim))))
+    self.W_out=theano.shared(np.random.uniform(low=-scaleRes, high=scaleRes,size=(resevoir_dim,output_dim)))
     self.__theano_build__()
   
   def ECPMatrix(self,m,epsilon=0.03):
