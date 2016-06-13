@@ -113,9 +113,9 @@ if __name__=='__main__':
     netDataSet=[]
     netTargetSet=[]
     netKeyList=[]
+    BERtotal=[]
     #print features
-    print list_for_deep.keys()
-
+    #print list_for_deep.keys()
 
     sep=np.zeros((tot))
     sep[tot-3]=1
@@ -188,6 +188,20 @@ if __name__=='__main__':
                 #first example is always an error!
                 errors+=1
                 print "Error",errors," on example",i
+                if g_it.target[i]==1:
+                    fn+=1
+                else:
+                    fp+=1
+        if i%50==0 and i!=0:
+                #output performance statistics every 50 examples
+                BER = 0.5 * (( float(fp) / (tn+fp))  +  (float(fn) / (tp+fn)))
+    
+                print "1-BER Window esempio ",i, (1.0 - BER)
+                BERtotal.append(1.0 - BER);
+                tp = 0
+                fp = 0
+                fn = 0
+                tn = 0
         #print features[0][i]
         #print features[0][i].shape
         #f=features[0][i,:]
@@ -204,4 +218,5 @@ if __name__=='__main__':
 
         model.OnlineTrain(netDataSet,netTargetSet,lr)
         #calcolo statistiche
+print "BER AVG", sum(BERtotal) / float(len(BERtotal))
            
