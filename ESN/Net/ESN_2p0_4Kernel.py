@@ -86,7 +86,7 @@ class EchoStateNetwork:
   def computeOut(self,inputSet,keyList):
     output=[]
     for seq,key in zip(inputSet,keyList):
-      print "Netout", self.computeOutput(seq)[-1][0]
+      #print "Netout", self.computeOutput(seq)[-1][0]
       output.append((key,self.computeOutput(seq)[-1][0])) 
 
     return output
@@ -133,7 +133,7 @@ def main():
   #raw_input()
   #print net.W_out.get_value()
   net.OnlineTrain(dataset[2::],targetSet[2::],learningRate)
-  print net.computeOut(dataset)
+  #print net.computeOut(dataset)
   #print resevoir
   print "Test"
   
