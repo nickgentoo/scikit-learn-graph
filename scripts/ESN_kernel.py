@@ -98,7 +98,7 @@ if __name__=='__main__':
     #print zip(_letters, _one_hot)
     #exit()
     PassiveAggressive = PAC(C=0.01)       
-    features,list_for_deep=Vectorizer.transform([g_it.graphs[i] for i in xrange(50)]) #Parallel ,njobs
+    features,list_for_deep=Vectorizer.transform(g_it.graphs) #Parallel ,njobs
     errors=0    
     tp=0
     fp=0
