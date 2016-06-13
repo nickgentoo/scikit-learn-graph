@@ -29,7 +29,7 @@ class EchoStateNetwork:
     m=v.dot(newS).dot(u_t)
     #pongo randomicamente dei valori negativi
     for i in range(np.random.randint(0,m.shape[0]*m.shape[1]-1)):
-      #scelgo  una valore casuale e cambio il segno
+      #sactivation_outputcelgo  una valore casuale e cambio il segno
       randRow=np.random.randint(0,m.shape[0])
       randCol=np.random.randint(0,m.shape[1])
       m[randRow,randCol]=-m[randRow,randCol]
@@ -42,7 +42,7 @@ class EchoStateNetwork:
   
     def forward_prop_step(u_t,x_t_prev, W_in, W, W_out):
 	x_t = self.activation_function(T.dot(u_t,W_in)+T.dot(x_t_prev,W))
-	o_t = T.dot(x_t,W_out)
+	o_t = self.activation_output(T.dot(x_t,W_out))
 	return [o_t, x_t]
       
     [o,x], updates = theano.scan(
@@ -86,6 +86,7 @@ class EchoStateNetwork:
   def computeOut(self,inputSet,keyList):
     output=[]
     for seq,key in zip(inputSet,keyList):
+      print "Netout", self.computeOutput(seq)[-1][0]
       output.append((key,self.computeOutput(seq)[-1][0])) 
 
     return output
