@@ -27,7 +27,7 @@ from sklearn.linear_model import PassiveAggressiveClassifier as PAC
 from skgraph.datasets import load_graph_datasets
 import numpy as np
 from scipy.sparse import csc_matrix
-
+from sklearn.utils import compute_class_weight
 if __name__=='__main__':
     if len(sys.argv)<1:
         sys.exit("python ODDKernel_example.py dataset r l filename kernel C nhidden learningRate")
@@ -98,7 +98,7 @@ if __name__=='__main__':
 
     #print zip(_letters, _one_hot)
     #exit()
-    PassiveAggressive = PAC(C=parameterC)       
+    PassiveAggressive = PAC(C=parameterC,class_weight={1:0.7,-1:0.3})       
     features,list_for_deep=Vectorizer.transform(g_it.graphs) #Parallel ,njobs
     errors=0    
     tp=0
@@ -111,16 +111,20 @@ if __name__=='__main__':
     
 
     model=ESN.EchoStateNetwork(tot,nHidden,1)
-    netDataSet=[]
-    netTargetSet=[]
-    netKeyList=[]
+    #netDataSet=[]
+    #netTargetSet=[]
+    #netKeyList=[]
     BERtotal=[]
+    bintargets=[1,-1]
     #print features
     #print list_for_deep.keys()
 
     sep=np.zeros((tot))
     sep[tot-3]=1
-    for i in xrange(features.shape[0]): 
+    for i in xrange(features.shape[0]):
+    	netDataSet=[]
+    	netTargetSet=[]
+    	netKeyList=[] 
         #i-th example
         #------------ESN dataset--------------------#
         ex=features[i]
@@ -153,7 +157,7 @@ if __name__=='__main__':
 	      matData.append(val)
 		
 		
-	    
+	    #print "N_features", ex.shape
 	    W=np.asarray(csc_matrix((matData, (RowIndex, ColIndex)), shape=ex.shape).todense())
 	    
 	    
@@ -165,7 +169,7 @@ if __name__=='__main__':
             PassiveAggressive.coef_=W
             pred=PassiveAggressive.predict(ex)
             score=PassiveAggressive.decision_function(ex)
-
+	    bintargets.append(g_it.target[i])
             if pred!=g_it.target[i]:
                 errors+=1
                 print "Error",errors," on example",i, "pred", score, "target",g_it.target[i]
@@ -183,6 +187,8 @@ if __name__=='__main__':
 
         else:
                 #first example is always an error!
+		pred=0
+		score=0
                 errors+=1
                 print "Error",errors," on example",i
                 if g_it.target[i]==1:
@@ -200,6 +206,7 @@ if __name__=='__main__':
                 fp = 0
                 fn = 0
                 tn = 0
+		bintargets=[1,-1]
         #print features[0][i]
         #print features[0][i].shape
         #f=features[0][i,:]
@@ -207,32 +214,38 @@ if __name__=='__main__':
         #print f.shape
         #print g_it.target[i]    
         #third parameter is compulsory just for the first call
-	    
-        PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
-        W_old=PassiveAggressive.coef_
+	print "prediction", pred, score
+        #if abs(score)<1.0 or pred!=g_it.target[i]:
+	if True:
+		ClassWeight=compute_class_weight('balanced',[1,-1],bintargets)
+		#print "class weights", {1:ClassWeight[0],-1:ClassWeight[1]}
+		PassiveAggressive.class_weight={1:ClassWeight[0],-1:ClassWeight[1]}
+	
+		PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
+		W_old=PassiveAggressive.coef_
 
 
-	for key,rowDict in list_for_deep[i].iteritems():
+		for key,rowDict in list_for_deep[i].iteritems():
 
-	  target=W_old[0,key]
-	    
-	  #print "key", key, "target", target
-	  codedFt=rowDict[0][:]
-	  codedTarget=[target]*len(rowDict[0])
-	  netKeyList.append(key)
-	  for featuresList in rowDict[1:]:
+		  target=W_old[0,key]
+		    
+		  #print "key", key, "target", target
+		  codedFt=rowDict[0][:]
+		  codedTarget=[target]*len(rowDict[0])
+		  netKeyList.append(key)
+		  for featuresList in rowDict[1:]:
 
-	      codedTarget.extend([target]*(len(featuresList)+1))#+1 perchè c'e anche il separatore
-	      codedFt.extend([sep])
-	      codedFt.extend(featuresList)
+		      codedTarget.extend([target]*(len(featuresList)+1))#+1 perchè c'e anche il separatore
+		      codedFt.extend([sep])
+		      codedFt.extend(featuresList)
 
-	  netDataSet.append(np.asarray(codedFt))
-	  netTargetSet.append(np.array(codedTarget).reshape(len(codedTarget),1))
+		  netDataSet.append(np.asarray(codedFt))
+		  netTargetSet.append(np.array(codedTarget).reshape(len(codedTarget),1))
 		
-        #------------ESN dataset--------------------#
-        # ESN Training
+		#------------ESN dataset--------------------#
+		# ESN Training
 
-        model.OnlineTrain(netDataSet,netTargetSet,lr)
-        #calcolo statistiche
+		model.OnlineTrain(netDataSet,netTargetSet,lr)
+		#calcolo statistiche
 print "BER AVG", sum(BERtotal) / float(len(BERtotal))
            
