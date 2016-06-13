@@ -3,9 +3,11 @@ import theano.tensor as T
 import numpy as np
 import numpy.linalg as linalg
 import scipy.sparse 
+import math
  #TODO: creare le matrici dei pesi iniziali che rispettino la  ESP
+outFun= lambda x: (1/(1+T.exp(-x*0.1)))*10-(10/2)
 class EchoStateNetwork:
-  def __init__ (self,input_dim,resevoir_dim,output_dim,activation_function=T.nnet.sigmoid,activation_output=T.arctan,scaleIn=1,scaleRes=1):
+  def __init__ (self,input_dim,resevoir_dim,output_dim,activation_function=T.nnet.sigmoid,activation_output=outFun,scaleIn=10,scaleRes=10):
     self.input_dim=input_dim
     self.resevoir_dim=resevoir_dim
     self.output_dim=output_dim
@@ -15,7 +17,7 @@ class EchoStateNetwork:
     self.W=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(resevoir_dim,resevoir_dim))))
     self.W_in=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleIn, high=scaleIn,size=(input_dim,resevoir_dim))))
     self.W_fb=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(output_dim,resevoir_dim))))
-    self.W_out=theano.shared(np.random.uniform(low=-scaleRes, high=scaleRes,size=(resevoir_dim,output_dim)))
+    self.W_out=theano.shared(self.ECPMatrix(np.random.uniform(low=-0.1, high=0.1,size=(resevoir_dim,output_dim))))
     self.__theano_build__()
   
   def ECPMatrix(self,m,epsilon=0.03):
