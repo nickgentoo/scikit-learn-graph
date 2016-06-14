@@ -6,3 +6,4 @@ python -m scripts/ESN_kernel Chemical_reduced radius lambda output_file kernel n
 For example,
 python -m scripts/ESN_kernel Chemical_reduced 1 1 a ODDST 0.01 500 0.001
 
+python -m scripts/ESN_kernel_PassiveAggressive Chemical_reduced 1 1 a ODDST 0.01 500 0.001

@@ -111,6 +111,7 @@ if __name__=='__main__':
     
 
     model=ESN.EchoStateNetwork(tot,nHidden,1)
+
     #netDataSet=[]
     #netTargetSet=[]
     #netKeyList=[]
@@ -128,7 +129,14 @@ if __name__=='__main__':
         #i-th example
         #------------ESN dataset--------------------#
         ex=features[i]
-
+	for key,rowDict in list_for_deep[i].iteritems():
+	  #print "key", key, "target", target
+	  codedFt=rowDict[0][:]
+	  netKeyList.append(key)
+	  for featuresList in rowDict[1:]:
+	      codedFt.extend([sep])
+	      codedFt.extend(featuresList)
+	  netDataSet.append(np.asarray(codedFt))
         #print "ex", ex
         #print list_for_deep[i].keys()
         
@@ -147,7 +155,7 @@ if __name__=='__main__':
 	    
 	    
 	    
-	    
+
 	    netOutput=model.computeOut(netDataSet,netKeyList)#W è una lisa di tuple (key,val)
 	    #creo la matrice sparsa:
 	    
@@ -160,8 +168,7 @@ if __name__=='__main__':
 	    #print "N_features", ex.shape
 	    W=np.asarray(csc_matrix((matData, (RowIndex, ColIndex)), shape=ex.shape).todense())
 	    
-	    
-	    
+
 	    #W=W_old #dump line
 
             
@@ -223,27 +230,20 @@ if __name__=='__main__':
 	
 		PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
 		W_old=PassiveAggressive.coef_
-
-
+		
 		for key,rowDict in list_for_deep[i].iteritems():
 
-		  target=W_old[0,key]
-		    
-		  #print "key", key, "target", target
-		  codedFt=rowDict[0][:]
-		  codedTarget=[target]*len(rowDict[0])
-		  netKeyList.append(key)
-		  for featuresList in rowDict[1:]:
+		    target=W_old[0,key]
+		    codedTarget=[target]*len(rowDict[0])
+		    for featuresList in rowDict[1:]:
+			codedTarget.extend([target]*(len(featuresList)+1))#+1 perchè c'e anche il separatore
+		    netTargetSet.append(np.array(codedTarget).reshape(len(codedTarget),1))
 
-		      codedTarget.extend([target]*(len(featuresList)+1))#+1 perchè c'e anche il separatore
-		      codedFt.extend([sep])
-		      codedFt.extend(featuresList)
 
-		  netDataSet.append(np.asarray(codedFt))
-		  netTargetSet.append(np.array(codedTarget).reshape(len(codedTarget),1))
 		
-		#------------ESN dataset--------------------#
+		#------------ESN TargetSetset--------------------#
 		# ESN Training
+		
 
 		model.OnlineTrain(netDataSet,netTargetSet,lr)
 		#calcolo statistiche
