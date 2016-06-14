@@ -89,6 +89,7 @@ class EchoStateNetwork:
     output=[]
     for seq,key in zip(inputSet,keyList):
       #print "Netout", self.computeOutput(seq)[-1][0]
+      #raw_input()
       output.append((key,self.computeOutput(seq)[-1][0])) 
 
     return output

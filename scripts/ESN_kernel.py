@@ -46,6 +46,7 @@ if __name__=='__main__':
     #working with Chemical
     g_it=load_graph_datasets.dispatch(dataset)
     
+    f=open(name,'w')
         #generate one-hot encoding
     Features=g_it.label_dict
     tot = len(Features)+3
@@ -165,6 +166,8 @@ if __name__=='__main__':
 	    
 	    
 	    netOutput=model.computeOut(netDataSet,netKeyList)#W è una lisa di tuple (key,val)
+	    #print netOutput
+	    #raw_input("net")
 	    #creo la matrice sparsa:
 	    
 	    for (key,val) in netOutput:
@@ -183,8 +186,11 @@ if __name__=='__main__':
             
             #set the weights of PA to the predicted values
             #PassiveAggressive.coef_=W
+	    
 
+	    
             score=ex.dot(W.T)
+   
             pred=np.sign(score)
 
             
@@ -222,6 +228,7 @@ if __name__=='__main__':
                 BER = 0.5 * (( float(fp) / (tn+fp))  +  (float(fn) / (tp+fn)))
     
                 print "1-BER Window esempio ",i, (1.0 - BER)
+                print>>f,"1-BER Window esempio "+str(i)+" "+str(1.0 - BER)
                 BERtotal.append(1.0 - BER)
                 tp = 0
                 fp = 0
@@ -250,6 +257,8 @@ if __name__=='__main__':
 		# ESN Training
 
 		model.OnlineTrain(netDataSet,netTargetSet,lr)
+
 		#calcolo statistiche
 print "BER AVG", sum(BERtotal) / float(len(BERtotal))
-           
+print>>f,"BER AVG "+str(sum(BERtotal) / float(len(BERtotal)))
+f.close()           
