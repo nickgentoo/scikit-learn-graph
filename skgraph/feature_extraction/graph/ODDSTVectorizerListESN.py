@@ -35,11 +35,6 @@ class ODDSTVectorizer():
     def transform(self, G_list):
          return self.vectObject.transform(G_list)
          
-    def transform_treemapping(self, G_list):
-         return self.vectObject.transform_treemapping(G_list)
-         
-    def transform_STtree(self, G_list):
-        return self.vectObject.getFeaturesApproximated_STtree(G_list)
          
     
 """

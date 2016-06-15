@@ -48,7 +48,7 @@ if __name__=='__main__':
 
         #generate one-hot encoding
     Features=g_it.label_dict
-    tot = len(Features)+3
+    tot = len(Features)
     print "Total number of labels", tot
     _letters=[]
     _one_hot=[]
@@ -61,23 +61,18 @@ if __name__=='__main__':
         #_one_hot.append("enc"+str(n))
         #_one_hot.append(' '.join(['0']*(n-1) + ['1'] + ['0']*(tot-n)))
         _letters.append(key)
-    a=np.zeros((tot))
-    a[tot-2]=1
-    _one_hot.append(a)
-    #_one_hot.append("enc"+str(tot-1))
-    a=np.zeros((tot))
-    a[tot-1]=1
-    _one_hot.append(a)
+#    a=np.zeros((tot))
+#    a[tot-2]=1
+#    _one_hot.append(a)
+#    #_one_hot.append("enc"+str(tot-1))
+#    a=np.zeros((tot))
+#    a[tot-1]=1
+#    _one_hot.append(a)
 
 
 
-
-    #_one_hot.append("enc"+str(tot))
-
-    #_one_hot.append(' '.join(['0']*(tot-2) + ['1'] + ['0']*(1)))
-    #_one_hot.append(' '.join(['0']*(tot-1) + ['1'] + ['0']*(0)))
-    _letters.append("P")
-    _letters.append("N")
+    #_letters.append("P")
+    #_letters.append("N")
     one_hot_encoding = dict(zip(_letters, _one_hot))
 
     #At this point, one_hot_encoding contains the encoding for each symbol in the alphabet
@@ -117,20 +112,21 @@ if __name__=='__main__':
     #print features
     #print list_for_deep.keys()
 
-    sep=np.zeros((tot))
-    sep[tot-3]=1
+    #sep=np.zeros((tot))
+    #sep[tot-3]=1
     for i in xrange(features.shape[0]):
       #i-th example
       #------------ESN dataset--------------------#
-      exampleESN=np.zeros(nHidden)
-      ex=features[i]
+      #exampleESN=np.zeros(nHidden)
+      #ex=features[i]
+      exampleESN=list_for_deep[i]
       #print "new_features", list_for_deep[i]
-      for key,rowDict in list_for_deep[i].iteritems():
-          #print "key", key, "target", target
-          #print "weight", features[i,key]
-          exampleESN+=np.array(np.multiply(rowDict,features[i,key])).reshape(nHidden,)
-          #print "exampleESN", exampleESN
-        #print list_for_deep[i].keys()
+#      for key,rowDict in list_for_deep[i].iteritems():
+#          #print "key", key, "target", target
+#          #print "weight", features[i,key]
+#          exampleESN+=np.array(np.multiply(rowDict,features[i,key])).reshape(nHidden,)
+#          #print "exampleESN", exampleESN
+#        #print list_for_deep[i].keys()
 
 
       if i!=0:

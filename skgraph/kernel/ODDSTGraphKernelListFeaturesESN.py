@@ -83,7 +83,7 @@ class ODDSTGraphKernel(GraphKernel):
         self.__conjsymbol=','
         self.__endsymbol=')'
         self.H=H
-        self.W_l=createEPCMatrix(len(one_hot_encoding)+1,H)
+        self.W_l=createEPCMatrix(len(one_hot_encoding),H)
         #labelTest=self.one_hot_encoding[self.one_hot_encoding.keys()[0]].reshape(1,len(self.one_hot_encoding)+1)
         #print "first label", self.one_hot_encoding[self.one_hot_encoding.keys()[0]].flatten()
         #print "example first label", np.dot(labelTest,W_l)
@@ -267,7 +267,7 @@ class ODDSTGraphKernel(GraphKernel):
         Lists_list={}
         
         Dict_features, Dict_lists = self.getFeaturesApproximated(G_orig,MapEncToId)        
-        feature_list.update({(instance_id,k):v for (k,v) in Dict_features.items()})
+        feature_list.update({(instance_id,k):v for (k,v) in Dict_features.iteritems()})
         Lists_list.update({instance_id:{k:v  for (k,v) in Dict_lists.iteritems()} })
 
 #        ve=convert_to_sparse_matrix(feature_list)    
@@ -310,21 +310,36 @@ class ODDSTGraphKernel(GraphKernel):
 #            return convert_to_sparse_matrix( feature_dict, MapEncToId )
         mapenctoid={}
         ve=convert_to_sparse_matrix_for_deep(feature_dict,mapenctoid)   
+        
+        if self.normalization:
+             ve = normalize(ve, norm='l2', axis=1)
+        #print Lists_ESN
         #print mapenctoid
         #modify featurelist in order to have the same keys
+#        for key,value in Lists_ESN.iteritems():
+#            innerList={}
+#            for key1,value1 in Lists_ESN[key].iteritems():
+#                innerList[mapenctoid[key1]]=value1
+#            Lists_ESN1[key]=innerList
+        #test codice piu veloce   
         for key,value in Lists_ESN.iteritems():
-            innerList={}
+            #print key
+            #print value.items()[0][1].shape[1]
+            #innerList=np.zeros(value[value.iterkeys().next()][0][1].shape)
+
+            innerList=np.zeros(value.iteritems().next()[1].shape)
+            #print innerList
             for key1,value1 in Lists_ESN[key].iteritems():
-                innerList[mapenctoid[key1]]=value1
-            Lists_ESN1[key]=innerList
+                #print value1
+                #print ve[key,mapenctoid[key1]]
+                innerList+=np.multiply(value1,ve[key,mapenctoid[key1]])
+            Lists_ESN1[key]=innerList    
            # Lists_list1[(key[0],mapenctoid[key[1]])]=value
 
             
         
         #ve=_dict_to_csr(feature_dict)   
 
-        if self.normalization:
-             ve = normalize(ve, norm='l2', axis=1)
         return ve, Lists_ESN1
     
 
@@ -454,7 +469,6 @@ class ODDSTGraphKernel(GraphKernel):
         sigmoidOnArray = np.vectorize(sigmoid)                            
 
         Dict_features={}
-        Dict_lists={}
         Dict_ESN={}
 
         for v in G.nodes():
@@ -465,7 +479,6 @@ class ODDSTGraphKernel(GraphKernel):
                 else:
                     (DAG,maxLevel)=generateDAGOrdered(G, v, self.max_radius)
             
-                MapNodeToLists={}    
                 MapNodeToESNencodings={}    
 
                 MapNodeToProductionsID={} #k:list(unsigned)
@@ -488,17 +501,13 @@ class ODDSTGraphKernel(GraphKernel):
                             MapNodeToESNencodings[u]=[[]]
                         else :
                             MapNodeToESNencodings[u].append([])
-                        if not u in MapNodeToLists:
-                            MapNodeToLists[u]=[[]]
-                        else :
-                            MapNodeToLists[u].append([])
                         if depth==0:
                             enc=hash(str(DAG.node[u]['label']))
                             #TEST enc=str(DAG.node[u]['label'])
                             
                             MapNodeToProductionsID[u].append(enc)
-                            MapNodeToLists[u][depth]=[[self.one_hot_encoding[str(DAG.node[u]['label'])]]]
-                            ohe=self.one_hot_encoding[str(DAG.node[u]['label'])].reshape(1,len(self.one_hot_encoding)+1)
+                            ohe=self.one_hot_encoding[str(DAG.node[u]['label'])].reshape(1,len(self.one_hot_encoding))
+                            #print ohe                            
                             MapNodeToESNencodings[u][depth]=sigmoidOnArray(np.dot(ohe,self.W_l))
                             #print "original",np.dot(ohe,self.W_l)
                             #print "sigmidized", MapNodeToESNencodings[u][depth]
@@ -506,7 +515,6 @@ class ODDSTGraphKernel(GraphKernel):
                             if max_child_height==0:
                                 frequency=maxLevel - DAG.node[u]['depth']
                             #print enc, MapNodeToLists[u][depth]
-                            Dict_lists[enc]=  MapNodeToLists[u][depth]
                             Dict_ESN[enc]=  MapNodeToESNencodings[u][depth]
 
                             if Dict_features.get(enc) is None:
@@ -523,18 +531,16 @@ class ODDSTGraphKernel(GraphKernel):
                             size=0
                             encoding=str(DAG.node[u]['label'])
                             new_string=[ self.one_hot_encoding[str(DAG.node[u]['label'])]]
-                            ohe=self.one_hot_encoding[str(DAG.node[u]['label'])].reshape(1,len(self.one_hot_encoding)+1)
+                            ohe=self.one_hot_encoding[str(DAG.node[u]['label'])].reshape(1,len(self.one_hot_encoding))
                             encodingESN=np.dot(ohe,self.W_l)
 
                             vertex_label_id_list=[]#list[string]
                             min_freq_children=sys.maxint
-                            child_hash_list={}
                             phi_children={}
                             for child in DAG.successors(u):
                                 size_map=len(MapNodeToProductionsID[child])
                                 child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
                                 freq_child=MapNodetoFrequencies[child][min(size_map,depth)-1]
-                                child_hash_list[child_hash]=MapNodeToLists[child][min(size_map,depth)-1]
                                 phi_children[child_hash] = MapNodeToESNencodings[child][min(size_map,depth)-1]  
                                 #print "phi_child", phi_children[child_hash]
                                 #print "child_hash_list", child_hash_list[child_hash]
@@ -545,27 +551,21 @@ class ODDSTGraphKernel(GraphKernel):
                                 size+=MapProductionIDtoSize[child_hash]
                             
                             vertex_label_id_list.sort()
-                            feature_list=[]
                             encoding+=self.__startsymbol+str(vertex_label_id_list[0])
                             #print "child 0",child_hash_list[vertex_label_id_list[0]]
                             #new_string+=self.__startsymbol+''.join(child_hash_list[vertex_label_id_list[0]])
                             #new_string+=self.__startsymbol+child_hash_list[vertex_label_id_list[0]][-1]
-                            new_string+=[self.one_hot_encoding['P']]+child_hash_list[vertex_label_id_list[0]][-1]
 
-                            MapNodeToLists[u][depth]+=child_hash_list[vertex_label_id_list[0]]
                             sum_phi_children=phi_children[vertex_label_id_list[0]]
                             for i in range(1,len(vertex_label_id_list)):
                                 encoding+=self.__conjsymbol+str(vertex_label_id_list[i])
                                 #new_string+=self.__conjsymbol+''.join(child_hash_list[vertex_label_id_list[i]])
                                 #print "child",i, child_hash_list[vertex_label_id_list[i]]
                                 
-                                new_string+=child_hash_list[vertex_label_id_list[i]][-1]
                                 #new_string+=self.__conjsymbol+child_hash_list[vertex_label_id_list[i]][-1]
                                 
-                                MapNodeToLists[u][depth]+=child_hash_list[vertex_label_id_list[i]]
                                 sum_phi_children+=phi_children[vertex_label_id_list[i]]
 
-                                feature_list.append(child_hash_list[vertex_label_id_list[i]])
                                 #print new_string
                             #print "sum phi children", sum_phi_children
                             child_cont=np.dot(sum_phi_children,self.W_h)
@@ -575,13 +575,11 @@ class ODDSTGraphKernel(GraphKernel):
                             #print "feature ecnoding", MapNodeToESNencodings[u][depth]
 
                             encoding+=self.__endsymbol
-                            new_string+=[self.one_hot_encoding['N'] ]
 
                             encoding=hash(encoding)
 #                            if not u in MapNodeToLists:
 #                                MapNodeToLists[u]=[[new_string]]
 #                            else:
-                            MapNodeToLists[u][depth]+=[new_string]
                             #print encoding, MapNodeToLists[u][depth]
                             #Dict_lists[encoding]=  MapNodeToLists[u][depth]
                             Dict_ESN[encoding]= MapNodeToESNencodings[u][depth]
