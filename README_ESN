@@ -12,3 +12,4 @@ python -m scripts/ESN_kernel_PassiveAggressive Chemical_reduced 1 1 a ODDST 0.01
 NEW ENS for encoding features
 python -m scripts/ESN_kernel_PassiveAggressive_kernel Chemical_reduced 3 1.6 a ODDST 0.01 1000
 
+python -m scripts/ESN_kernel_correct Chemical 3 1.6 correct_noPA ODDST 0.01 1000 0.001 -->29216.pts-19.gpu04
