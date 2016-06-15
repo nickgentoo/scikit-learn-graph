@@ -190,7 +190,7 @@ if __name__=='__main__':
       print "prediction", pred, score
         #if abs(score)<1.0 or pred!=g_it.target[i]:
       if True:
-        ClassWeight=compute_class_weight('balanced',[1,-1],bintargets)
+        ClassWeight=compute_class_weight('auto',np.array([1,-1]),bintargets)
         print "class weights", {1:ClassWeight[0],-1:ClassWeight[1]}
         PassiveAggressive.class_weight={1:ClassWeight[0],-1:ClassWeight[1]}
 
