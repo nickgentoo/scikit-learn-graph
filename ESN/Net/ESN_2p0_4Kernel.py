@@ -7,7 +7,7 @@ import math
  #TODO: creare le matrici dei pesi iniziali che rispettino la  ESP
 outFun= lambda x: (1/(1+T.exp(-x*0.1)))*10-(10/2)
 class EchoStateNetwork:
-  def __init__ (self,input_dim,resevoir_dim,output_dim,activation_function=T.nnet.sigmoid,activation_output=lambda x:x,scaleIn=10,scaleRes=10):
+  def __init__ (self,input_dim,resevoir_dim,output_dim,activation_function=T.nnet.sigmoid,activation_output=outFun,scaleIn=10,scaleRes=10):
     self.input_dim=input_dim
     self.resevoir_dim=resevoir_dim
     self.output_dim=output_dim
@@ -85,12 +85,11 @@ class EchoStateNetwork:
       self.sgd_step(inSeq,tarSeq,learning_rate)
       
       
-  def computeOut(self,inputSet,keyList):
+  def computeOut(self,inputSet):
     output=[]
-    for seq,key in zip(inputSet,keyList):
-      #print "Netout", self.computeOutput(seq)[-1][0]
-      #raw_input()
-      output.append((key,self.computeOutput(seq)[-1][0])) 
+    for seq in inputSet:
+
+      output.append(self.computeOutput(seq)[-1][0]) 
 
     return output
       
