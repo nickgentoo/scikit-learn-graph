@@ -111,7 +111,7 @@ if __name__=='__main__':
     correct=[0]*50
     
     
-
+    #print ESN
     model=ESN.EchoStateNetwork(tot,nHidden,1)
 
     #netDataSet=[]
@@ -133,12 +133,13 @@ if __name__=='__main__':
         ex=features[i]
 	for key,rowDict in list_for_deep[i].iteritems():
 	  #print "key", key, "target", target
-	  codedFt=rowDict[0][:]
+	  
+	  codedFt=[]
 	  netKeyList.append(key)
-	  for featuresList in rowDict[1:]:
-	      codedFt.extend([sep])
-	      codedFt.extend(featuresList)
-	  netDataSet.append(np.asarray(codedFt))
+	  for featuresList in rowDict:     
+	     codedFt.append(np.asarray(featuresList))
+	  netDataSet.append(codedFt)
+
         #print "ex", ex
         #print list_for_deep[i].keys()
         
@@ -151,25 +152,22 @@ if __name__=='__main__':
             RowIndex=[]
             ColIndex=[]
             matData=[]
-            
+           
 
-	    
-	    
-	    
-	    
+	    for key,listOfSubFt in zip(netKeyList,netDataSet):
+	      #da una features ottengo una lista di dataset
+	 
 
-	    netOutput=model.computeOut(netDataSet,netKeyList)#W è una lisa di tuple (key,val)
-	    #creo la matrice sparsa:
-	    
-	    for (key,val) in netOutput:
+	      netOutput=model.computeOut(listOfSubFt)#W è una lisa di tuple (key,val)
 	      RowIndex.append(0)#W deve essere è un vettore riga
 	      ColIndex.append(key)
-	      matData.append(val)
+	      matData.append(sum(netOutput))
+	      
 		
 		
 	    #print "N_features", ex.shape
 	    W=np.asarray(csc_matrix((matData, (RowIndex, ColIndex)), shape=ex.shape).todense())
-	    
+	
 
 	    #W=W_old #dump line
 
@@ -226,30 +224,36 @@ if __name__=='__main__':
         #third parameter is compulsory just for the first call
 	print "prediction", pred, score
         #if abs(score)<1.0 or pred!=g_it.target[i]:
-	if True:
-		#ClassWeight=compute_class_weight('balanced',[1,-1],bintargets)
-		#print "class weights", {1:ClassWeight[0],-1:ClassWeight[1]}
-		#PassiveAggressive.class_weight={1:ClassWeight[0],-1:ClassWeight[1]}
+
+	#ClassWeight=compute_class_weight('balanced',[1,-1],bintargets)
+	#print "class weights", {1:ClassWeight[0],-1:ClassWeight[1]}
+	#PassiveAggressive.class_weight={1:ClassWeight[0],-1:ClassWeight[1]}
+
+	PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
+	W_old=PassiveAggressive.coef_
 	
-		PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
-		W_old=PassiveAggressive.coef_
+	
+	#ESN target---#
+	netTargetSet=[]
+	for key,rowDict in list_for_deep[i].iteritems():
+
+	    target=np.asarray([W_old[0,key]])
+	    codedTarget=[]
+	    for featuresList in rowDict:
+		codedTarget.append(np.asarray([target]*(len(featuresList))))
 		
-		for key,rowDict in list_for_deep[i].iteritems():
-
-		    target=W_old[0,key]
-		    codedTarget=[target]*len(rowDict[0])
-		    for featuresList in rowDict[1:]:
-			codedTarget.extend([target]*(len(featuresList)+1))#+1 perchè c'e anche il separatore
-		    netTargetSet.append(np.array(codedTarget).reshape(len(codedTarget),1))
+	    netTargetSet.append(codedTarget)
 
 
-		
-		#------------ESN TargetSetset--------------------#
-		# ESN Training
-		
+	
 
-		model.OnlineTrain(netDataSet,netTargetSet,lr)
-		#calcolo statistiche
+	#------------ESN TargetSetset--------------------#
+	# ESN Training
+	
+	for ftDataset,ftTargetSet in zip(netDataSet,netTargetSet):
+	  model.OnlineTrain(ftDataset,ftTargetSet,lr)
+	#raw_input("TR")
+	#calcolo statistiche
 
 print "BER AVG", sum(BERtotal) / float(len(BERtotal))
 print>>f,"BER AVG "+str(sum(BERtotal) / float(len(BERtotal)))
