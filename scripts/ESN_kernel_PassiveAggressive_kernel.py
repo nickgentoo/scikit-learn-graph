@@ -43,6 +43,7 @@ if __name__=='__main__':
     #FIXED PARAMETERS
     normalization=True
     #working with Chemical
+    f=open(name,'w')
     g_it=load_graph_datasets.dispatch(dataset)
 
         #generate one-hot encoding
@@ -172,6 +173,7 @@ if __name__=='__main__':
                 BER = 0.5 * (( float(fp) / (tn+fp))  +  (float(fn) / (tp+fn)))
 
                 print "1-BER Window esempio ",i, (1.0 - BER)
+                print>>f,"1-BER Window esempio "+str(i)+" "+str(1.0 - BER)
                 BERtotal.append(1.0 - BER)
                 tp = 0
                 fp = 0
@@ -196,4 +198,5 @@ if __name__=='__main__':
 
 #calcolo statistiche
 print "BER AVG", sum(BERtotal) / float(len(BERtotal))
-
+print>>f,"BER AVG "+str(sum(BERtotal) / float(len(BERtotal)))
+f.close() 
