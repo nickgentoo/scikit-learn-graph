@@ -131,15 +131,17 @@ if __name__=='__main__':
         #i-th example
         #------------ESN dataset--------------------#
         ex=features[i]
+        #CREARE W
 	for key,rowDict in list_for_deep[i].iteritems():
 	  #print "key", key, "target", target
 	  
-	  codedFt=[]
+	  #debugLine
+	  rowDict=rowDict[-1]
+	  #----#
+	  
+	  netDataSet.append(np.asarray(rowDict))
 	  netKeyList.append(key)
-	  for featuresList in rowDict:     
-	     codedFt.append(np.asarray(featuresList))
-	  netDataSet.append(codedFt)
-
+	  
         #print "ex", ex
         #print list_for_deep[i].keys()
         
@@ -154,20 +156,22 @@ if __name__=='__main__':
             matData=[]
            
 
-	    for key,listOfSubFt in zip(netKeyList,netDataSet):
+	    for key,ft in zip(netKeyList,netDataSet):
 	      #da una features ottengo una lista di dataset
 	 
-
-	      netOutput=model.computeOut(listOfSubFt)#W è una lisa di tuple (key,val)
+	      
+	      W_key=model.computeOut(ft)
 	      RowIndex.append(0)#W deve essere è un vettore riga
 	      ColIndex.append(key)
-	      matData.append(sum(netOutput))
-	      
+	      matData.append(W_key)
+	  
 		
 		
 	    #print "N_features", ex.shape
 	    W=np.asarray(csc_matrix((matData, (RowIndex, ColIndex)), shape=ex.shape).todense())
-	
+	    
+	    print W
+	    raw_input("W")
 
 	    #W=W_old #dump line
 
@@ -175,7 +179,9 @@ if __name__=='__main__':
             #set the weights of PA to the predicted values
             PassiveAggressive.coef_=W
             pred=PassiveAggressive.predict(ex)
+ 
             score=PassiveAggressive.decision_function(ex)
+
 	    bintargets.append(g_it.target[i])
             if pred!=g_it.target[i]:
                 errors+=1
@@ -237,12 +243,13 @@ if __name__=='__main__':
 	netTargetSet=[]
 	for key,rowDict in list_for_deep[i].iteritems():
 
-	    target=np.asarray([W_old[0,key]])
-	    codedTarget=[]
-	    for featuresList in rowDict:
-		codedTarget.append(np.asarray([target]*(len(featuresList))))
-		
-	    netTargetSet.append(codedTarget)
+	    #DEbugLine-----#
+	    rowDict=rowDict[-1]
+	    #-----------#
+	    target=np.asarray( [np.asarray([W_old[0,key]])]*len(rowDict))
+	    
+	   
+	    netTargetSet.append(target)
 
 
 	
@@ -250,8 +257,8 @@ if __name__=='__main__':
 	#------------ESN TargetSetset--------------------#
 	# ESN Training
 	
-	for ftDataset,ftTargetSet in zip(netDataSet,netTargetSet):
-	  model.OnlineTrain(ftDataset,ftTargetSet,lr)
+	#for ftDataset,ftTargetSet in zip(netDataSet,netTargetSet):
+	model.OnlineTrain(netDataSet,netTargetSet,lr)
 	#raw_input("TR")
 	#calcolo statistiche
 

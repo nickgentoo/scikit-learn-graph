@@ -7,7 +7,7 @@ import math
  #TODO: creare le matrici dei pesi iniziali che rispettino la  ESP
 outFun= lambda x: (1/(1+T.exp(-x*0.1)))*10-(10/2)
 class EchoStateNetwork:
-  def __init__ (self,input_dim,resevoir_dim,output_dim,activation_function=T.nnet.sigmoid,activation_output=outFun,scaleIn=10,scaleRes=10):
+  def __init__ (self,input_dim,resevoir_dim,output_dim,activation_function=T.nnet.sigmoid,activation_output=lambda x:x,scaleIn=1,scaleRes=1):
     self.input_dim=input_dim
     self.resevoir_dim=resevoir_dim
     self.output_dim=output_dim
@@ -17,7 +17,7 @@ class EchoStateNetwork:
     self.W=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(resevoir_dim,resevoir_dim))))
     self.W_in=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleIn, high=scaleIn,size=(input_dim,resevoir_dim))))
     self.W_fb=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(output_dim,resevoir_dim))))
-    self.W_out=theano.shared(self.ECPMatrix(np.random.uniform(low=-0.1, high=0.1,size=(resevoir_dim,output_dim))))
+    self.W_out=theano.shared(np.random.uniform(low=-1/2, high=1/2,size=(resevoir_dim,output_dim)))
     self.__theano_build__()
   
   def ECPMatrix(self,m,epsilon=0.03):
@@ -31,7 +31,7 @@ class EchoStateNetwork:
     m=v.dot(newS).dot(u_t)
     #pongo randomicamente dei valori negativi
     for i in range(np.random.randint(0,m.shape[0]*m.shape[1]-1)):
-      #sactivation_outputcelgo  una valore casuale e cambio il segno
+      #activation_output scelgo  una valore casuale e cambio il segno
       randRow=np.random.randint(0,m.shape[0])
       randCol=np.random.randint(0,m.shape[1])
       m[randRow,randCol]=-m[randRow,randCol]
@@ -72,6 +72,7 @@ class EchoStateNetwork:
                       updates=[(self.W_out, self.W_out - learning_rate * self.dWout)],allow_input_downcast=True)
   
   def TrainESN(self,inputSet,targetSet):
+
     #self.__theano_build__()
     proj=self.computeResevoir(inputSet[0])
     targetMatrix=targetSet[0]
@@ -81,6 +82,9 @@ class EchoStateNetwork:
     self.W_out.set_value(np.linalg.pinv(proj).dot(targetMatrix))
   
   def OnlineTrain(self,inputSet,targetSet,learning_rate):
+    #print "trainingFun"
+    #print targetSet
+    #raw_input("--")
     for inSeq,tarSeq in zip(inputSet,targetSet):
       self.sgd_step(inSeq,tarSeq,learning_rate)
       
@@ -90,7 +94,11 @@ class EchoStateNetwork:
     for seq in inputSet:
 
       output.append(self.computeOutput(seq)[-1][0]) 
-
+    #print "outFun"
+    #print output
+    #raw_input("----")
+    #print self.W_out.get_value()
+    #raw_input("---------------------")
     return output
       
     
