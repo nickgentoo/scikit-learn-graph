@@ -22,7 +22,7 @@ import json
 import networkx as nx
 #from eden import util
 
-def gspan_to_eden(infile):
+def gspan_to_eden(infile,dict_labels={}, counter=[1]):
     """
     Takes a string list in the extended gSpan format and yields networkx graphs.
 
@@ -38,7 +38,7 @@ def gspan_to_eden(infile):
         if line.strip():
             if line[0] in ['g', 't']:
                 if string_list:
-                    yield _gspan_to_networkx(string_list)
+                    yield _gspan_to_networkx(string_list,dict_labels,counter)
                 string_list = []
             string_list += [line]
 
@@ -46,7 +46,7 @@ def gspan_to_eden(infile):
         yield _gspan_to_networkx(string_list)
 
 
-def _gspan_to_networkx(string_list):
+def _gspan_to_networkx(string_list,dict_labels={}, counter=[1]):
     """
     Utility function that generates a single networkx graph from a string
     Parameters
@@ -65,6 +65,11 @@ def _gspan_to_networkx(string_list):
             if firstcharacter in ['v', 'V']:
                 vid = int(line_list[1])
                 vlabel = line_list[2]
+                #print "vlabel", vlabel
+                if vlabel not in dict_labels:
+                    #print "new label", label, "key", counter
+                    dict_labels[vlabel]= counter[0]
+                    counter[0]+=1
                 #lowercase v indicates active viewpoint
                 if firstcharacter == 'v':
                     weight = 1

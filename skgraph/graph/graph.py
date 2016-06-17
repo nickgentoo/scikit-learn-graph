@@ -24,13 +24,13 @@ from numpy.linalg import norm
 
 
 
-def instance_to_graph(input = None):
+def instance_to_graph(input = None,dict_labels={}, counter=[1]):
     """
     Function that reads a graph dataset encoded in gspan format from an inpout stream.
 
     """
     import gspan
-    return gspan.gspan_to_eden(input)
+    return gspan.gspan_to_eden(input,dict_labels,counter)
 
 
 #def instance_to_graph(input = None, input_type = 'file', tool = None, options = dict()):

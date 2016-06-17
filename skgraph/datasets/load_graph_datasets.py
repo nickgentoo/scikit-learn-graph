@@ -57,28 +57,31 @@ def dispatch(dataset):
         print "Loading LEUK40OV41LEUK47OV50 REDUCED dataset"        
         g_it=load_graphs_LEUK40OV41LEUK47OV50_reduced()
     elif dataset=="MUTAG":
-	g_it=load_graph_datasets.load_graphs_MUTAG()
+	g_it=load_graphs_MUTAG()
     elif dataset=="enzymes":
         print "Loading enzymes dataset"        
-        g_it=load_graph_datasets.load_graphs_enzymes()
+        g_it=load_graphs_enzymes()
     elif dataset=="proteins":
         print "Loading proteins dataset"        
-        g_it=load_graph_datasets.load_graphs_proteins()       
+        g_it=load_graphs_proteins()       
     elif dataset=="synthetic":
         print "Loading synthetic dataset"        
-        g_it=load_graph_datasets.load_graphs_synthetic() 
+        g_it=load_graphs_synthetic() 
     elif dataset=="BZR":
         print "Loading BZR dataset"        
-        g_it=load_graph_datasets.load_graphs_BZR()   
+        g_it=load_graphs_BZR()   
     elif dataset=="COX2":
         print "Loading COX2 dataset"        
-        g_it=load_graph_datasets.load_graphs_COX2()   
+        g_it=load_graphs_COX2()   
     elif dataset=="DHFR":
         print "Loading DHFR dataset"        
-        g_it=load_graph_datasets.load_graphs_DHFR()     
+        g_it=load_graphs_DHFR()     
     elif dataset=="PROTEINS_full":
         print "Loading PROTEINS_full dataset"        
-        g_it=load_graph_datasets.load_graphs_PROTEINS_full() 
+        g_it=load_graphs_PROTEINS_full() 
+    elif dataset=="LMdata":
+        print "Loading LMdata dataset"        
+        g_it=load_graphs_LMdata() 
     else:
         print "Unknown dataset name"
     return g_it
@@ -596,3 +599,26 @@ def load_graphs_LEUK40OV41LEUK47OV50_reduced():
     labels=True,
     veclabels=False)
 
+def load_graphs_LMdata():
+    """Load the LMdata graph dataset for graph classification..
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/LMdata/labels.txt.standardized'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets//LMdata/graphs.gspan.standardized'
+    _target=load_target(input_target_url)
+    label_dict={}
+    counter=[1]
+    g_it=instance_to_graph(input_data_url,label_dict,counter)
+
+    print 'Loaded LMdata graph dataset for graph classification.'
+    return Bunch(graphs=[i for i in g_it],
+    label_dict=label_dict,
+    target=_target,
+    labels=True,
+    veclabels=False)
