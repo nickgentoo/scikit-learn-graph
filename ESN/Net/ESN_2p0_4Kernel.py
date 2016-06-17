@@ -94,11 +94,8 @@ class EchoStateNetwork:
     for seq in inputSet:
 
       output.append(self.computeOutput(seq)[-1][0]) 
-    #print "outFun"
-    #print output
-    #raw_input("----")
-    #print self.W_out.get_value()
-    #raw_input("---------------------")
+
+      
     return output
       
     

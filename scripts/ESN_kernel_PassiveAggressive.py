@@ -135,10 +135,6 @@ if __name__=='__main__':
 	for key,rowDict in list_for_deep[i].iteritems():
 	  #print "key", key, "target", target
 	  
-	  #debugLine
-	  rowDict=rowDict[-1]
-	  #----#
-	  
 	  netDataSet.append(np.asarray(rowDict))
 	  netKeyList.append(key)
 	  
@@ -159,8 +155,9 @@ if __name__=='__main__':
 	    for key,ft in zip(netKeyList,netDataSet):
 	      #da una features ottengo una lista di dataset
 	 
-	      
-	      W_key=model.computeOut(ft)
+
+	      W_key=model.computeOut([ft])[0]#essendo che si passa sempre una solo lemento in una lista avro sempre un solo output
+
 	      RowIndex.append(0)#W deve essere è un vettore riga
 	      ColIndex.append(key)
 	      matData.append(W_key)
@@ -170,8 +167,7 @@ if __name__=='__main__':
 	    #print "N_features", ex.shape
 	    W=np.asarray(csc_matrix((matData, (RowIndex, ColIndex)), shape=ex.shape).todense())
 	    
-	    print W
-	    raw_input("W")
+	
 
 	    #W=W_old #dump line
 
@@ -243,9 +239,7 @@ if __name__=='__main__':
 	netTargetSet=[]
 	for key,rowDict in list_for_deep[i].iteritems():
 
-	    #DEbugLine-----#
-	    rowDict=rowDict[-1]
-	    #-----------#
+
 	    target=np.asarray( [np.asarray([W_old[0,key]])]*len(rowDict))
 	    
 	   
