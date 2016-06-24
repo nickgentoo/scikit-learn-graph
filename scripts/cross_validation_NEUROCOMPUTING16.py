@@ -92,8 +92,8 @@ for MCit in xrange(MC):
     temp.extend(y_test.tolist())
     y_total=np.array(temp)
     #y_total.extend(y_test)
-    clf = svm.SVC(C=c, kernel='precomputed')
-    clf1 = svm.SVC(C=c, kernel='precomputed')
+    clf = svm.SVC(C=c, kernel='precomputed',max_iter=10000000)
+    clf1 = svm.SVC(C=c, kernel='precomputed',max_iter=10000000)
     
     train_gram = [] #[[] for x in xrange(0,len(train))]
     test_gram = []# [[] for x in xrange(0,len(test))]
