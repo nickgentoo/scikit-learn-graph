@@ -69,7 +69,8 @@ f=open(str(sys.argv[3]+".c"+str(c)),'w')
 f.write("Total examples "+str(len(gram))+"\n")
 f.write("# \t Stability_MCsample\n")
 from sklearn.cross_validation import train_test_split
-Complexity=0
+Complexity=0.0
+Wtot=0.0
 for MCit in xrange(MC):
     #print gram.shape
     print("number of examples "+str(ceil(sqrt(gram.shape[0]))))
@@ -121,24 +122,25 @@ for MCit in xrange(MC):
     print("Training done")  
     #commented code to compute |W|
     #print |W|^2= alpha Q alpha, where Q_ij= y_i y_j K(x_i,x_j)
-    #alpha = clf.dual_coef_ 
-    #yw=target_array[clf.support_]
-    #Kw=gram[clf.support_,:][:,clf.support_]
-    ##print yw.shape, Kw.shape, gram.shape
-    #yw.shape=(yw.shape[0],1)
-    #YM=np.ones(yw.shape[0])*yw.T
-    #Q= np.multiply(np.multiply(YM,Kw),YM.T)
-    ##print Q.shape
-    ##print alpha.shape
-    ##alpha.shape=(alpha.shape[1],1)
-    #W2=alpha*Q*alpha.T
-    #print "|W|" , sqrt(W2),
-    #f.write(str(sqrt(W2))+"\t")
+    alpha = clf1.dual_coef_ 
+    yw=target_array[clf1.support_]
+    Kw=gram[clf1.support_,:][:,clf1.support_]
+    #print yw.shape, Kw.shape, gram.shape
+    yw.shape=(yw.shape[0],1)
+    YM=np.ones(yw.shape[0])*yw.T
+    Q= np.multiply(np.multiply(YM,Kw),YM.T)
+    #print Q.shape
+    #print alpha.shape
+    #alpha.shape=(alpha.shape[1],1)
+    W2=alpha*Q*alpha.T
+    print "|W|" , sqrt(W2),
+    #f.write("|W| "+str(sqrt(W2))+"\n")
+    Wtot+=float(W2)
     #-------------------------
 
     #loss  = make_scorer(my_custom_loss_func, greater_is_better=False)
 
-    from sklearn.metrics import accuracy_score
+    #from sklearn.metrics import accuracy_score
     #predictions on training set
     y_test_predicted=clf.decision_function(X_test)
     #print type( my_custom_loss_func(y_train, y_train_predicted))
@@ -158,8 +160,9 @@ for MCit in xrange(MC):
     #print "Accuracy_decision: ", accuracy_score(y_test, y_test_sign)
 
 Complexity/=MC 
+Wtot/=MC
 f.write(str(abs(loss_training-loss_total))+"\n")
-f.write("Stability with "+str(MC)+" MonteCarlo samples: "+str(Complexity)+"\n")
-print "Stability with", MC, "MonteCarlo samples:", Complexity   
+f.write("Stability with "+str(MC)+" MonteCarlo samples: "+str(Complexity)+" Wmax "+str(Wtot)+"\n")
+print "Stability with", MC, "MonteCarlo samples:", Complexity,"Wmax", str(Wtot)
 f.close()
 
