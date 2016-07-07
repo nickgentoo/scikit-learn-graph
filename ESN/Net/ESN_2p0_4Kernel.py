@@ -18,6 +18,7 @@ class EchoStateNetwork:
     self.W_in=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleIn, high=scaleIn,size=(input_dim,resevoir_dim))))
     self.W_fb=theano.shared(self.ECPMatrix(np.random.uniform(low=-scaleRes, high=scaleRes,size=(output_dim,resevoir_dim))))
     self.W_out=theano.shared(np.random.uniform(low=-1/2, high=1/2,size=(resevoir_dim,output_dim)))
+
     self.__theano_build__()
   
   def ECPMatrix(self,m,epsilon=0.03):
@@ -104,19 +105,25 @@ def main():
   S1=np.array([[0,0,1],[0,1,0],[1,0,0],[1,1,1],[1,0,1],[0,1,0],[1,0,0],[1,1,1]])
   S2=np.array([[0,1,0],[1,0,0],[1,1,1]])
   S3=np.array([[1,1,1],[1,0,1],[0,1,0],[1,0,1]])
+  S4=np.array([[0,0,1],[0,1,0],[1,0,0],[1,1,1],[1,0,1],[0,1,0],[1,0,0],[1,1,1]])
+  S5=np.array([[0,1,0],[1,0,0],[1,1,1]])
+  S6=np.array([[1,1,1],[1,0,1],[0,1,0],[1,0,1]])
   #T1=np.array([[0,0,1,1],[0,1,1,0],[1,1,0,0],[1,1,1,1],[1,1,0,1],[0,1,1,0],[1,1,0,0],[1,1,1,1]])
   #T2=np.array([[0,1,0,1],[1,0,0,1],[1,1,1,1]])
   #T3=np.array([[1,1,1,1],[1,1,0,1],[0,1,1,0],[1,0,1,1]])
   
   T1=np.array([[1],[1],[1],[1],[1],[1],[1],[1]])
   T2=np.array([[0],[0],[0]])
-  T3=np.array([[1],[1],[0],[1]])
+  T3=np.array([[1],[1],[1],[1]])
+  T4=np.array([[1],[1],[1],[1],[1],[1],[1],[1]])
+  T5=np.array([[0],[0],[0]])
+  T6=np.array([[1],[1],[1],[1]])
   ##------------test DS------------#
   dataset=[S1,S2,S3]
   targetSet=[T1,T2,T3]
   maxLen=5
-  nSample=3
-  sampleLen=[5,3,4]
+  nSample=6
+  sampleLen=[5,3,4,5,3,4]
   singleSampleDim=3
   nOutUnits=1
   nComponet=3
@@ -136,11 +143,12 @@ def main():
   print "!---!"
   net= EchoStateNetwork(singleSampleDim,nComponet,nOutUnits,T.nnet.sigmoid,lambda x:x)
   #print net.W_out.get_value()
-  net.OnlineTrain(dataset[0:2],targetSet[0:2],learningRate)
+  for seqI,seqO in zip(dataset,targetSet):
+    net.OnlineTrain([seqI],[seqO],learningRate)
   #raw_input()
   #print net.W_out.get_value()
-  net.OnlineTrain(dataset[2::],targetSet[2::],learningRate)
-  #print net.computeOut(dataset)
+  #net.OnlineTrain(dataset[2::],targetSet[2::],learningRate)
+  print net.computeOut(dataset)
   #print resevoir
   print "Test"
   
