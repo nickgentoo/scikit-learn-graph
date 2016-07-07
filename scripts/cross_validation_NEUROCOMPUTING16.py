@@ -78,8 +78,10 @@ for MCit in xrange(MC):
     #print radn
     y_train=[]
     #continue only if both class labels are in the set
+    rand=MCit
     while (len(np.unique(y_train))<2):
-        train_index, test_index, y_train, y_test = train_test_split(X, target_array, train_size=(radn-1),test_size=1, random_state=MCit)
+        train_index, test_index, y_train, y_test = train_test_split(X, target_array, train_size=(radn-1),test_size=1, random_state=rand)
+        rand=MCit+MC
     #print train_index, test_index, y_train.shape, y_test.shape 
     #At this point, X_train, X_test are the list of indices to consider in training/test
 
