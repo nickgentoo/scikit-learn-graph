@@ -1,5 +1,6 @@
 import sys, os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '',''))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '',''))\
+from math import sqrt
 import numpy as np
 
 
@@ -10,7 +11,7 @@ if len(sys.argv)<3:
 
 eigen=open(sys.argv[1],'r')
 stab=open(sys.argv[2],'r')
-e=float(eigen.readlines()[0])
+e=sqrt(float(eigen.readlines()[0]))
 
 temp=stab.readlines()[-1].strip().split(" ")
 #print temp
