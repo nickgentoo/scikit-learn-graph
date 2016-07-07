@@ -28,7 +28,7 @@ from skgraph.datasets import load_graph_datasets
 import numpy as np
 
 if __name__=='__main__':
-    if len(sys.argv)<1:
+    if len(sys.argv)<5:
         sys.exit("python ODDKernel_example.py dataset r l filename kernel")
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])

@@ -208,8 +208,15 @@ if __name__=='__main__':
 	#print i
         if i%50==0 and i!=0:
                 #output performance statistics every 50 examples
-                BER = 0.5 * (( float(fp) / (tn+fp))  +  (float(fn) / (tp+fn)))
-    
+                if (tn+fp) > 0:
+                    pos_part= float(fp) / (tn+fp)
+                else:
+                    pos_part=0
+                if (tp+fn) > 0:
+                    neg_part=float(fn) / (tp+fn)
+                else:
+                    neg_part=0
+                BER = 0.5 * ( pos_part  + neg_part)    
                 print "1-BER Window esempio ",i, (1.0 - BER)
                 print>>f,"1-BER Window esempio "+str(i)+" "+str(1.0 - BER)
                 BERtotal.append(1.0 - BER)

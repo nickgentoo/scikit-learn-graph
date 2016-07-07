@@ -571,6 +571,7 @@ class ODDSTGraphKernel(GraphKernel):
                             child_cont=np.dot(sum_phi_children,self.W_h)
                             #print "child_cont", child_cont
                             encodingESN+=child_cont
+                            #print "Encoding induced by ESN", encodingESN
                             MapNodeToESNencodings[u][depth]=sigmoidOnArray(encodingESN)
                             #print "feature ecnoding", MapNodeToESNencodings[u][depth]
 
