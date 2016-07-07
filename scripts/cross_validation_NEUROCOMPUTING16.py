@@ -167,7 +167,7 @@ for MCit in xrange(MC):
 Complexity/=MC 
 Wtot/=MC
 f.write(str(abs(loss_training-loss_total))+"\n")
-f.write("Stability with "+str(MC)+" MonteCarlo samples: "+str(Complexity)+" Wmax "+str(Wtot)+"\n")
+f.write("Stability with "+str(MC)+" MonteCarlo samples: "+str(float(Complexity))+" Wmax "+str(Wtot)+"\n")
 print "Stability with", MC, "MonteCarlo samples:", Complexity,"Wmax", str(Wtot)
 f.close()
 
