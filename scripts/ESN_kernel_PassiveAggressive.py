@@ -100,7 +100,7 @@ if __name__=='__main__':
 
     #print zip(_letters, _one_hot)
     #exit()
-    PassiveAggressive = PAC(C=parameterC)       
+    PassiveAggressive = PAC(C=parameterC,n_iter=1,fit_intercept=False,shuffle=False)       
     features,list_for_deep=Vectorizer.transform(g_it.graphs) #Parallel ,njobs
     errors=0    
     tp=0
@@ -166,7 +166,8 @@ if __name__=='__main__':
 		
 	    #print "N_features", ex.shape
 	    W=np.asarray(csc_matrix((matData, (RowIndex, ColIndex)), shape=ex.shape).todense())
-	    
+	    #print W
+	    #raw_input("W (output)")
 	
 
 	    #W=W_old #dump line
@@ -232,36 +233,44 @@ if __name__=='__main__':
         #print g_it.target[i]    
         #third parameter is compulsory just for the first call
 	print "prediction", pred, score
-        #if abs(score)<1.0 or pred!=g_it.target[i]:
-
-	#ClassWeight=compute_class_weight('balanced',[1,-1],bintargets)
-	#print "class weights", {1:ClassWeight[0],-1:ClassWeight[1]}
-	#PassiveAggressive.class_weight={1:ClassWeight[0],-1:ClassWeight[1]}
-
-	PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
-	W_old=PassiveAggressive.coef_
+	#print "intecept",PassiveAggressive.intercept_
+	#raw_input()
+        if abs(score)<1.0 or pred!=g_it.target[i]:
 	
-	
-	#ESN target---#
-	netTargetSet=[]
-	for key,rowDict in list_for_deep[i].iteritems():
+	    ClassWeight=compute_class_weight('auto',np.asarray([1,-1]),bintargets)
+	    #print "class weights", {1:ClassWeight[0],-1:ClassWeight[1]}
+	    PassiveAggressive.class_weight={1:ClassWeight[0],-1:ClassWeight[1]}
 
-
-	    target=np.asarray( [np.asarray([W_old[0,key]])]*len(rowDict))
+	    PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
+	    #PassiveAggressive.partial_fit(ex,np.array([g_it.target[i]]),np.unique(g_it.target))
+	    W_old=PassiveAggressive.coef_
 	    
-	   
-	    netTargetSet.append(target)
+	    
+	    #ESN target---#
+	    netTargetSet=[]
+	    for key,rowDict in list_for_deep[i].iteritems():
 
 
-	
+		target=np.asarray( [np.asarray([W_old[0,key]])]*len(rowDict))
+		
+	      
+		netTargetSet.append(target)
 
-	#------------ESN TargetSetset--------------------#
-	# ESN Training
-	
-	#for ftDataset,ftTargetSet in zip(netDataSet,netTargetSet):
-	model.OnlineTrain(netDataSet,netTargetSet,lr)
-	#raw_input("TR")
-	#calcolo statistiche
+
+	    
+
+	    #------------ESN TargetSetset--------------------#
+	    # ESN Training
+	    
+	    #for ftDataset,ftTargetSet in zip(netDataSet,netTargetSet):
+	    #print "Input"
+	    #print netDataSet
+	    #raw_input("Output")
+	    #print netTargetSet
+	    #raw_input("Target")
+	    model.OnlineTrain(netDataSet,netTargetSet,lr)
+	    #raw_input("TR")
+	    #calcolo statistiche
 
 print "BER AVG", sum(BERtotal) / float(len(BERtotal))
 print>>f,"BER AVG "+str(sum(BERtotal) / float(len(BERtotal)))
