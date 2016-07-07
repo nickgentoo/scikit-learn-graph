@@ -76,7 +76,10 @@ for MCit in xrange(MC):
     print("number of examples "+str(ceil(sqrt(gram.shape[0]))))
     radn=int(ceil(sqrt(gram.shape[0])))
     #print radn
-    train_index, test_index, y_train, y_test = train_test_split(X, target_array, train_size=(radn-1),test_size=1, random_state=MCit)
+    y_train=[]
+    #continue only if both class labels are in the set
+    while (len(np.unique(y_train))<2):
+        train_index, test_index, y_train, y_test = train_test_split(X, target_array, train_size=(radn-1),test_size=1, random_state=MCit)
     #print train_index, test_index, y_train.shape, y_test.shape 
     #At this point, X_train, X_test are the list of indices to consider in training/test
 
