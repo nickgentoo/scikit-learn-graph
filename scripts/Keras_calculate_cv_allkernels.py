@@ -75,7 +75,7 @@ class DNN:
 
 if __name__=='__main__':
     if len(sys.argv)<1:
-        sys.exit("python ODDKernel_example.py dataset r l kernel")
+        sys.exit("python ODDKernel_example.py dataset r l kernel n_hidden")
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
@@ -84,6 +84,8 @@ if __name__=='__main__':
     name=str(sys.argv[4])
 
     kernel=sys.argv[5]
+    n_hidden=int(sys.argv[6])
+
     #FIXED PARAMETERS
     normalization=True
     
@@ -152,7 +154,7 @@ if __name__=='__main__':
 
     print x_train.shape
     print x_test.shape
-    AutoEncoder=DNN(x_train.shape[1],layerSize=[1000])
+    AutoEncoder=DNN(x_train.shape[1],layerSize=[n_hidden])
 
     AutoEncoder.model.fit(x_train, x_train,
                     nb_epoch=10,
@@ -163,8 +165,34 @@ if __name__=='__main__':
     # note that we take them from the *test* set
 
     encoded_features = AutoEncoder.encoder.predict(densefeat)
-    print "Extracted", encoded_features.shape[1], "features from",encoded_features.shape[0],"examples."
-    print "Saving Features in svmlight format in", name+".svmlight"
-    #print GMsvm
-    from sklearn import datasets
-    datasets.dump_svmlight_file(encoded_features,g_it.target, name+".svmlight", zero_based=False)
+    from sklearn import cross_validation
+    from sklearn.svm import SVC, LinearSVC
+    clf = LinearSVC(C=1,dual=True) #, class_weight='auto'
+    #clf = SVC(C=1,kernel='rbf',gamma=0.001) #, class_weight='auto'
+#
+    y_train=g_it.target
+    kf = cross_validation.StratifiedKFold(y_train, n_folds=10, shuffle=True,random_state=42)
+    scores=cross_validation.cross_val_score(
+        clf, encoded_features, y_train, cv=kf, scoring='accuracy')
+    print scores
+    print "Inner AUROC: %0.4f (+/- %0.4f)" % (scores.mean(), scores.std())
+
+    #print GM
+##############################################################################
+# Train classifiers
+#
+# For an initial search, a logarithmic grid with basis
+# 10 is often helpful. Using a basis of 2, a finer
+# tuning can be achieved but at a much higher cost.
+#    from sklearn.cross_validation import StratifiedShuffleSplit
+#    from sklearn.grid_search import GridSearchCV
+#    C_range = np.logspace(-2, 4, 7)
+#    gamma_range = np.logspace(-9, 3, 13)
+#    param_grid = dict( C=C_range)
+#    cv = StratifiedShuffleSplit(y_train, n_iter=10, test_size=0.2, random_state=42)
+#    grid = GridSearchCV(LinearSVC(), param_grid=param_grid, cv=cv,verbose=10)
+#    print "starting grid search"
+#    grid.fit(encoded_features, y_train)
+#    
+#    print("The best parameters are %s with a score of %0.2f"
+#          % (grid.best_params_, grid.best_score_))
