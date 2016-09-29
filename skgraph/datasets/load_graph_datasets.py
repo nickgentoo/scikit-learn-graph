@@ -57,7 +57,8 @@ def dispatch(dataset):
         print "Loading LEUK40OV41LEUK47OV50 REDUCED dataset"        
         g_it=load_graphs_LEUK40OV41LEUK47OV50_reduced()
     elif dataset=="MUTAG":
-	g_it=load_graphs_MUTAG()
+        print "Loading MUTAG dataset"        
+        g_it=load_graphs_MUTAG()
     elif dataset=="enzymes":
         print "Loading enzymes dataset"        
         g_it=load_graphs_enzymes()
@@ -211,12 +212,13 @@ def load_graphs_NCI1():
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/NCI1/NCI1_graphs.gspan'
     _target=load_target(input_target_url)
     label_dict={}
-    g_it=instance_to_graph(input = input_data_url,label_dict=label_dict)
+    g_it=instance_to_graph(input = input_data_url)
+    #g_it=instance_to_graph(input = input_data_url,label_dict=label_dict)
 
     print 'Loaded NCI1 graph dataset for graph classification.'
     return Bunch(graphs=[i for i in g_it],
     target=_target,
-    label_dict=label_dict,
+    #label_dict=label_dict,
     labels=True,
     veclabels=False)
 

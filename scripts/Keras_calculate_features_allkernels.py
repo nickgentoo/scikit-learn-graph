@@ -86,34 +86,9 @@ if __name__=='__main__':
     kernel=sys.argv[5]
     #FIXED PARAMETERS
     normalization=True
-    
-    if dataset=="CAS":
-        print "Loading bursi(CAS) dataset"        
-        g_it=load_graph_datasets.load_graphs_bursi()
-    elif dataset=="GDD":
-        print "Loading GDD dataset"        
-        g_it=load_graph_datasets.load_graphs_GDD()
-    elif dataset=="CPDB":
-        print "Loading CPDB dataset"        
-        g_it=load_graph_datasets.load_graphs_CPDB()
-    elif dataset=="AIDS":
-        print "Loading AIDS dataset"        
-        g_it=load_graph_datasets.load_graphs_AIDS()
-    elif dataset=="NCI1":
-        print "Loading NCI1 dataset"        
-        g_it=load_graph_datasets.load_graphs_NCI1()
-    elif dataset=="NCI109":
-        print "Loading NCI109 dataset"        
-        g_it=load_graph_datasets.load_graphs_NCI109()
-    elif dataset=="NCI123":
-        print "Loading NCI123 dataset"        
-        g_it=load_graph_datasets.load_graphs_NCI123()
-    elif dataset=="NCI_AIDS":
-        print "Loading NCI_AIDS dataset"        
-        g_it=load_graph_datasets.load_graphs_NCI_AIDS()
-    else:
-        print "Unknown dataset name"
-     
+    g_it=load_graph_datasets.dispatch(dataset)
+
+
 
     if kernel=="WL":
         print "Lambda ignored"
