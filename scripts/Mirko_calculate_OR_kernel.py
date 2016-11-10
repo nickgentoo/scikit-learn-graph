@@ -20,6 +20,10 @@ You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 import sys
+
+#import os
+#sys.path.append('/Users/mirko/Uni/dottorato/experiments/scikit-learn-graph/')
+
 from skgraph.feature_extraction.graph.ODDSTVectorizer import ODDSTVectorizer
 from skgraph.feature_extraction.graph.NSPDK.NSPDKVectorizer import NSPDKVectorizer
 from skgraph.feature_extraction.graph.WLVectorizer import WLVectorizer
@@ -28,16 +32,50 @@ from sklearn import preprocessing
 from skgraph.datasets.load_graph_datasets import dispatch
 import numpy as np
 
+#START MIRKO
+import scipy.special as spc
+import cvxopt as co
+
+def d_kernel(R, k, norm=True):
+    
+    m = R.size[0]
+    n = R.size[1]
+    
+    x_choose_k = [0]*(n+1)
+    x_choose_k[0] = 0
+    for i in range(1, n+1):
+        x_choose_k[i] = spc.binom(i,k)
+    
+    nCk = x_choose_k[n]
+    X = R*R.T
+    
+    K = co.matrix(0.0, (X.size[0], X.size[1]))
+    for i in range(m):
+        for j in range(i, m):
+            n_niCk = x_choose_k[n - int(X[i,i])]
+            n_njCk = x_choose_k[n - int(X[j,j])]
+            n_ni_nj_nijCk = x_choose_k[n - int(X[i,i]) - int(X[j,j]) + int(X[i,j])]
+            K[i,j] = K[j,i] = nCk - n_niCk - n_njCk + n_ni_nj_nijCk
+    
+    if norm:
+        YY = co.matrix([K[i,i] for i in range(K.size[0])])
+        YY = co.sqrt(YY)**(-1)
+        K = co.mul(K, YY*YY.T)
+
+    return K
+#END MIRKO
+
 if __name__=='__main__':
     if len(sys.argv)<1:
-        sys.exit("python ODDKernel_example.py dataset r l filename kernel")
+        sys.exit("python ODDKernel_example.py dataset r l d filename kernel")
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
     #hashs=int(sys.argv[3])
     njobs=1
-    name=str(sys.argv[4])
-    kernel=sys.argv[5]
+    d=int(sys.argv[4]) #MIRKO
+    name=str(sys.argv[5])
+    kernel=sys.argv[6]
     #FIXED PARAMETERS
     normalization=True
     g_it=dispatch(dataset)
@@ -65,10 +103,18 @@ if __name__=='__main__':
     binarizer = preprocessing.Binarizer(threshold=0.0)
     
     binfeatures=binarizer.transform(features)
-    print binfeatures
+    #print binfeatures
+    
     #cALCULATE DOT PRODUCT BETWEEN FEATURE REPRESENTATION OF EXAMPLES
-    GM=binfeatures.dot(binfeatures.T).todense().tolist() 
+    #GM=binfeatures.dot(binfeatures.T).todense().tolist() 
     #print GM
+    
+    # START MIRKO
+    print "Calculating D-kernel..."
+    R = co.matrix(binfeatures.todense())
+    K = d_kernel(R, d)
+    GM = np.array(K)#.tolist()
+    # END MIRKO
     
     print "Saving Gram matrix"
     output=open(name+".svmlight","w")
