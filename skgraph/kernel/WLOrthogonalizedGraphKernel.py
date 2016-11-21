@@ -147,7 +147,7 @@ class WLOrthogonalizedGraphKernel(GraphKernel):
         if self.normalization:
             for i in range(len(ve)):
               ve[i] = normalize(ve[i], norm='l2', axis=1)
-        print type(ve)      
+        #print type(ve)      
         return ve
 #    def transform(self, graph_list):
 #        """

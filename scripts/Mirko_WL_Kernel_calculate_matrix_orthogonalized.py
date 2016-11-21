@@ -34,7 +34,7 @@ from skgraph.datasets.load_graph_datasets import dispatch
 import scipy.special as spc
 import cvxopt as co
 
-def d_kernel(R, k, norm=True):
+def d_kernel(R, k, norm=False):
     
     m = R.size[0]
     n = R.size[1]
@@ -89,7 +89,7 @@ if __name__=='__main__':
         print "warning! uNRECOGNIZED KERNEL!"
     
     feat_list=ODDkernel.transform(g_it.graphs) #Parallel ,njobs
-    print feat_list[0],type(feat_list[0])
+    #print feat_list[0],type(feat_list[0])
     
     #codice vecchio
     print "Binarizing features"
@@ -103,16 +103,18 @@ if __name__=='__main__':
     #print GM
     
     # START MIRKO
-    GM=np.zeros((len(g_it.graphs),len(g_it.graphs)))
+    GM=co.matrix(np.zeros((len(g_it.graphs),len(g_it.graphs))))
     for i in range(len(binfeatures_list)):
         print "Calculating D-kernel... for matrix",str(i)
         R = co.matrix(binfeatures_list[i].todense())
         K = d_kernel(R, d)
-        GM += np.array(K)#.tolist()
-    
-    
+        GM += K#.tolist()
+    #Normalization
+    YY = co.matrix([GM[i,i] for i in range(GM.size[0])])
+    YY = co.sqrt(YY)**(-1)
+    GM = co.mul(GM, YY*YY.T)
     #fine codice vecchio
-    
+    GM=np.array(GM)
 
     #GM_list=ODDkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
     mat=GM
@@ -120,8 +122,8 @@ if __name__=='__main__':
     for i in xrange(len(mat)):
         GMsvm.append([])
         GMsvm[i]=[i+1]
-        GMsvm[i].extend(GM_list[mat][i])
+        GMsvm[i].extend(mat[i])
     print "Saving Gram matrix"
     datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
-    datasets.dump_svmlight_file(GMsvm,g_it.target, name+".height"+str(mat)+".svmlight")
+    #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".height"+str(mat)+".svmlight")
     ##print GM
