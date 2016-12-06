@@ -37,24 +37,28 @@ from keras import regularizers
 #tutorial from https://blog.keras.io/building-autoencoders-in-keras.html
 
 class DeepNNVariableLayersPreTrain:
-  def __init__(self,inputDim,layerSize=None, init=None):
+  def __init__(self,inputDim,layerSize=None, initialization=None):
       # this is our input placeholder
-    print layerSize
+    print "LayerSize",layerSize
     self.encoder = Sequential()
     #input layer
     input_img = Input(shape=(inputDim,))
     encoded=input_img
 
     #encoded=Dense(layerSize[0], init='uniform', activation='relu')(input_img)
+    encoded=Dense(layerSize[0], weights=[initialization, np.zeros(initialization.shape[1])], activation='relu')(encoded)
+
     #middle layers
-    for size in layerSize[0:]:  
-      encoded=Dense(size, init='uniform', activation='relu')(encoded)
+    for size in layerSize[1:]:  
+      encoded=Dense(size, init='uniform', activation='tanh')(encoded)
+      #encoded=Dense(size, weights=[initialization, np.zeros(initialization.shape[1])], activation='relu')(encoded)
+
     #output layer
     #decoded=Dense(layerSize[-2], init='uniform', activation='relu')(encoded)
     first=True
     for size in reversed(layerSize[:-1]):  
       if (first==True):
-          decoded=Dense(size, init='uniform', activation='relu')(encoded) 
+          decoded=Dense(size, init='uniform', activation='tanh')(encoded) 
           first=False
       else:
           decoded=Dense(size, init='uniform', activation='relu')(decoded) 
@@ -270,12 +274,14 @@ if __name__=='__main__':
     x_test=densefeat[int(n*0.8):,:]
 
 
-    n_components= min(n, n_features,200)
+    n_components= min(n, n_features,n_hidden[0])
+    #n_components=min(n, n_features)
     from sklearn.decomposition import PCA
     pca = PCA(n_components=n_components)
     pca.fit(x_train)
     trans=pca.transform(x_train) 
     test_trans=pca.transform(x_test) 
+    tot_trans=pca.transform(densefeat)
 
     #print pca.explained_variance_ratio_  
     print type(x_train), x_train.shape
@@ -287,10 +293,11 @@ if __name__=='__main__':
     print x_train.shape
     print x_test.shape
     #AutoEncoder=DeepNN(x_train.shape[1],layerSize=[n_hidden[0],n_hidden[1],n_hidden[2]])
-    AutoEncoder=DeepNNVariableLayersPreTrain(x_train.shape[1],layerSize=n_hidden, init=pca.components_)
-    
+    AutoEncoder=DeepNNVariableLayersPreTrain(x_train.shape[1],layerSize=n_hidden, initialization=pca.components_.T)
+    #AutoEncoder=DeepNNVariableLayersPreTrain(trans.shape[1],layerSize=n_hidden, initialization=pca.components_)
+
     AutoEncoder.model.fit(x_train, x_train,
-                    nb_epoch=10,
+                    nb_epoch=500,
                     batch_size=256,
                     shuffle=True,
                     validation_data=(x_test, x_test))
@@ -320,7 +327,7 @@ if __name__=='__main__':
 # tuning can be achieved but at a much higher cost.
     from sklearn.cross_validation import StratifiedShuffleSplit
     from sklearn.grid_search import GridSearchCV
-    C_range = np.logspace(-2, 4, 7)
+    C_range = np.logspace(-2, 2, 5)
 #    gamma_range = np.logspace(-9, 3, 13)
     param_grid = dict( C=C_range)
     cv = StratifiedShuffleSplit(y_train, n_iter=10, test_size=0.2, random_state=42)
