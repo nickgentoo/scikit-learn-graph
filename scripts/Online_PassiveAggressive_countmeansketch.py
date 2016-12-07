@@ -72,6 +72,7 @@ if __name__=='__main__':
     #print zip(_letters, _one_hot)
     #exit()
     features=Vectorizer.transform(g_it.graphs) #Parallel ,njobs
+    print "examples, features", features.shape
     
     errors=0    
     tp=0
