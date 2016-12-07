@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+python -m scripts/Online_PassiveAggressive_countmeansketch LMdata 3 1 a ODDST 0.01  
+
 Created on Fri Mar 13 13:02:41 2015
 
 Copyright 2015 Nicolo' Navarin
@@ -42,7 +44,7 @@ if __name__=='__main__':
     name=str(sys.argv[4])
     kernel=sys.argv[5]
     C=float(sys.argv[6])
-    lr=float(sys.argv[7])
+    #lr=float(sys.argv[7])
     #FIXED PARAMETERS
     normalization=True
     #working with Chemical
@@ -60,7 +62,7 @@ if __name__=='__main__':
         Vectorizer=WLVectorizer(r=max_radius,normalization=normalization)
     elif kernel=="ODDST":
         print "Using ST kernel"
-        Vectorizer=ODDSTVectorizer(r=max_radius,l=la,normalization=normalization, one_hot_encoding=one_hot_encoding)
+        Vectorizer=ODDSTVectorizer(r=max_radius,l=la,normalization=normalization)
     elif kernel=="NSPDK":
         print "Using NSPDK kernel, lambda parameter interpreted as d"
         Vectorizer=NSPDKVectorizer(r=max_radius,d=int(la),normalization=normalization)
