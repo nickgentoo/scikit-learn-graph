@@ -51,7 +51,7 @@ if __name__=='__main__':
 
     #lr=float(sys.argv[7])
     #FIXED PARAMETERS
-    normalization=True
+    normalization=False
     #working with Chemical
     g_it=load_graph_datasets.dispatch(dataset)
     
