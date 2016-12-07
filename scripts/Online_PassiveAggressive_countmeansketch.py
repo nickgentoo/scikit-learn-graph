@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+
+
 python -m scripts/Online_PassiveAggressive_countmeansketch LMdata 3 1 a ODDST 0.01  
 
 Created on Fri Mar 13 13:02:41 2015
@@ -35,7 +37,7 @@ from countminsketch import CountMinSketch
 
 if __name__=='__main__':
     if len(sys.argv)<1:
-        sys.exit("python ODDKernel_example.py dataset r l filename kernel C learningRate")
+        sys.exit("python ODDKernel_example.py dataset r l filename kernel C m d")
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
@@ -44,6 +46,9 @@ if __name__=='__main__':
     name=str(sys.argv[4])
     kernel=sys.argv[5]
     C=float(sys.argv[6])
+    m=int(sys.argv[7])
+    d=int(sys.argv[7])
+
     #lr=float(sys.argv[7])
     #FIXED PARAMETERS
     normalization=True
@@ -100,7 +105,7 @@ if __name__=='__main__':
     tn = 0
     part_plus=0
     part_minus=0
-    WCMS=CountMinSketch(1000,10)
+    WCMS=CountMinSketch(m,d)
     for i in xrange(features.shape[0]):
 
           ex=features[i][0]
