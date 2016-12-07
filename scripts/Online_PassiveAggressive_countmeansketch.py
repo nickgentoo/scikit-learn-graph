@@ -113,8 +113,10 @@ if __name__=='__main__':
 
           rows,cols = ex.nonzero()
           dot=0.0
+          module=0.0
           for row,col in zip(rows,cols):
               ((row,col), ex[row,col])
+              module+=ex[row,col]**2
               #print col, ex[row,col]
               dot+=WCMS[col]*ex[row,col]
               #print dot
@@ -138,7 +140,7 @@ if __name__=='__main__':
           else:
               coef=(part_plus+1.0)/(part_plus+part_minus+1.0)
               part_minus+=1
-          tao = min (C, max (0.0,(1.0 - g_it.target[i]*dot )*coef) );
+          tao = min (C, max (0.0,( (1.0 - g_it.target[i]*dot )*coef) / module ) );
           
           if (tao > 0.0):
               for row,col in zip(rows,cols):
