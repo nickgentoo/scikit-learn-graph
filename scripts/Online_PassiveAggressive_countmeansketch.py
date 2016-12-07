@@ -95,7 +95,9 @@ if __name__=='__main__':
     fp = 0
     fn = 0
     tn = 0
-    WCMS=CountMinSketch(2000,50)
+    part_plus=0
+    part_minus=0
+    WCMS=CountMinSketch(1000,10)
     for i in xrange(features.shape[0]):
 
           ex=features[i][0]
@@ -122,7 +124,14 @@ if __name__=='__main__':
                     tp+=1
              else:
                      tn+=1
-          tao = min (C, max (0.0,(1.0 - g_it.target[i]*dot )) );
+          if(g_it.target[i]==1):
+              coef=(part_minus+1.0)/(part_plus+part_minus+1.0)
+              part_plus+=1
+          else:
+              coef=(part_plus+1.0)/(part_plus+part_minus+1.0)
+              part_minus+=1
+          tao = min (C, max (0.0,(1.0 - g_it.target[i]*dot )*coef) );
+          
           if (tao > 0.0):
               for row,col in zip(rows,cols):
                    ((row,col), ex[row,col])
@@ -150,6 +159,8 @@ if __name__=='__main__':
                 fp = 0
                 fn = 0
                 tn = 0
+                part_plus=0
+                part_minus=0
 print "BER AVG", np.average(BERtotal)
          
           #print "N_features", ex.shape
