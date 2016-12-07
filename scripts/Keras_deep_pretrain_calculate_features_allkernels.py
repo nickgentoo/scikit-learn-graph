@@ -300,7 +300,7 @@ if __name__=='__main__':
 
     AutoEncoder.model.fit(x_train, x_train,
                     nb_epoch=500,
-                    batch_size=256,
+                    batch_size=64,
                     shuffle=True,
                     validation_data=(x_test, x_test))
     # encode and decode some digits
