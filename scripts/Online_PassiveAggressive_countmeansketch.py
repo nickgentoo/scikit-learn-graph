@@ -172,7 +172,9 @@ if __name__=='__main__':
                 tn = 0
                 part_plus=0
                 part_minus=0
-print "BER AVG", np.average(BERtotal)
+print "BER AVG", str(np.average(BERtotal)),"std", np.std(BERtotal)
+f.write("BER AVG "+ str(np.average(BERtotal))+" std "+str(np.std(BERtotal))+"\n")
+
 f.close()
          
           #print "N_features", ex.shape
