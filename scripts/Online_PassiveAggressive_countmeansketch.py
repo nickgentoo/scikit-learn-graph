@@ -163,6 +163,7 @@ if __name__=='__main__':
                      neg_part=0
                 BER = 0.5 * ( pos_part  + neg_part)    
                 print "1-BER Window esempio ",i, (1.0 - BER)
+                f.write("1-BER Window esempio "+str(i)+" "+str(1.0 - BER)+"\n")
                 #print>>f,"1-BER Window esempio "+str(i)+" "+str(1.0 - BER)
                 BERtotal.append(1.0 - BER)
                 tp = 0
@@ -172,6 +173,7 @@ if __name__=='__main__':
                 part_plus=0
                 part_minus=0
 print "BER AVG", np.average(BERtotal)
+f.close()
          
           #print "N_features", ex.shape
         #generate explicit W from CountMeanSketch 
