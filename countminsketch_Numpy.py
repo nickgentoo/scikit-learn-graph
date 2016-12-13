@@ -20,8 +20,9 @@ You should have received a copy of the GNU General Public License
 along with count-mean-sketch.  If not, see <http://www.gnu.org/licenses/>.
 """
 import hashlib
-import array
-import numpy as np
+#import array
+from numpy import median
+import numpy.matlib
 import copy
 class CountMinSketch(object):
     """
@@ -64,7 +65,7 @@ class CountMinSketch(object):
         self.m = m
         self.d = d
         self.n = 0
-        self.tables = np.matrix(np.zeros(shape=(d,m)))
+        self.tables = numpy.matlib.zeros(shape=(d,m))
 #        for _ in xrange(d):
 #            table = array.array("d", (0.0 for _ in xrange(m)))
 #            self.tables.append(table)
@@ -94,7 +95,7 @@ class CountMinSketch(object):
         The returned value always overestimates the real value.
         """
         #Modified by Nicolo' Navarin
-        return np.median([self.tables[tableIndex,i] for tableIndex, i in zip(xrange(self.d), self._hash(x))])
+        return median([self.tables[tableIndex,i] for tableIndex, i in zip(xrange(self.d), self._hash(x))])
         #return min(table[i] for table, i in zip(self.tables, self._hash(x)))
 
     def __getitem__(self, x):
@@ -114,7 +115,7 @@ class CountMinSketch(object):
         for i in xrange(self.d):
             temp=self.tables[i,:]*other.tables[i,:].T
             dots.append(temp)
-        return np.median(dots)
+        return median(dots)
     def __add__(self, other):
         temp=copy.deepcopy(self)
         temp.tables+=other.tables

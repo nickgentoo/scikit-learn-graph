@@ -116,7 +116,7 @@ if __name__=='__main__':
           dot=0.0
           module=0.0
           for row,col in zip(rows,cols):
-              ((row,col), ex[row,col])
+              #((row,col), ex[row,col])
               module+=ex[row,col]**2
               #print col, ex[row,col]
               #dot+=WCMS[col]*ex[row,col]
