@@ -76,16 +76,14 @@ class CountMinSketch(object):
             md5.update(str(i))
             yield int(md5.hexdigest(), 16) % self.m
     def _sign_hash(self, x):
-                md5 = hashlib.md5(str(hash(x)))
                 md5sign = hashlib.md5(str(hash(x)))
                 for i in xrange(self.d):
-                    md5.update(str(i))
                     md5sign.update(str(i+42))
                     boolsign= int(md5sign.hexdigest(), 16) % 2
                     boolsign=1
                     if boolsign:
                         y=-1
-                    yield (int(md5.hexdigest(), 16) % self.m, boolsign)
+                    yield boolsign
 
     def add(self, x, value=1.0):
         """
@@ -97,7 +95,7 @@ class CountMinSketch(object):
         Effectively counts `x` as occurring once.
         """
         self.n += value
-        for tableIndex, i, sign in zip(xrange(self.d), self._sign_hash(x)):
+        for tableIndex, i, sign in zip(xrange(self.d), self._hash(x), self._sign_hash(x)):
             self.tables[tableIndex,i] += value*sign
 
     def query(self, x):
