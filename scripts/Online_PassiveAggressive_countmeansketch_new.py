@@ -47,7 +47,7 @@ if __name__=='__main__':
     kernel=sys.argv[5]
     C=float(sys.argv[6])
     m=int(sys.argv[7])
-    d=int(sys.argv[7])
+    d=int(sys.argv[8])
 
     #lr=float(sys.argv[7])
     #FIXED PARAMETERS
