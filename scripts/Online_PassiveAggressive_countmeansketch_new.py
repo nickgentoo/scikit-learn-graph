@@ -34,8 +34,11 @@ from scipy.sparse import csc_matrix
 from sklearn.utils import compute_class_weight
 from scipy.sparse import csr_matrix
 from countminsketch_Numpy import CountMinSketch
-
+from itertools import izip
+import time
 if __name__=='__main__':
+    start_time = time.time()
+
     if len(sys.argv)<1:
         sys.exit("python ODDKernel_example.py dataset r l filename kernel C m d")
     dataset=sys.argv[1]
@@ -80,7 +83,8 @@ if __name__=='__main__':
     #exit()
     features=Vectorizer.transform(g_it.graphs) #Parallel ,njobs
     print "examples, features", features.shape
-    
+    features_time=time.time()
+    print("Computed features in %s seconds ---" % (features_time - start_time))
     errors=0    
     tp=0
     fp=0
@@ -106,56 +110,61 @@ if __name__=='__main__':
     part_plus=0
     part_minus=0
     WCMS=CountMinSketch(m,d)
+    cms_creation=0.0
     for i in xrange(features.shape[0]):
+          time1=time.time()
           exCMS=CountMinSketch(m,d)
 
           ex=features[i][0]
+          target=g_it.target[i]
           #W=csr_matrix(ex)
 
           rows,cols = ex.nonzero()
-          dot=0.0
+          #dot=0.0
           module=0.0
-          for row,col in zip(rows,cols):
+          for row,col in izip(rows,cols):
               #((row,col), ex[row,col])
-              module+=ex[row,col]**2
+              value=ex[row,col]
+              module+=value**2
               #print col, ex[row,col]
               #dot+=WCMS[col]*ex[row,col]
-              exCMS.add(col,ex[row,col])
+              exCMS.add(col,value)
               #print dot
               #TODO aggiungere bias
-              
+          time2=time.time()
+          cms_creation+=time2 - time1
           dot=WCMS.dot(exCMS)
           #print "dot:", dot, "dotCMS:",dot1
-          if (np.sign(dot) != g_it.target[i] ):
-             #print "error on example",i, "predicted:", dot, "correct:", g_it.target[i]
+          if (np.sign(dot) != target ):
+             #print "error on example",i, "predicted:", dot, "correct:", target
              errors+=1
-             if g_it.target[i]==1:
+             if target==1:
                      fn+=1
              else:
                      fp+=1
           else:
-             #print "correct classification", g_it.target[i]
-             if g_it.target[i]==1:
+             #print "correct classification", target
+             if target==1:
                     tp+=1
              else:
                      tn+=1
-          if(g_it.target[i]==1):
+          if(target==1):
               coef=(part_minus+1.0)/(part_plus+part_minus+1.0)
               part_plus+=1
           else:
               coef=(part_plus+1.0)/(part_plus+part_minus+1.0)
               part_minus+=1
-          tao = min (C, max (0.0,( (1.0 - g_it.target[i]*dot )*coef) / module ) );
+          tao = min (C, max (0.0,( (1.0 - target*dot )*coef) / module ) );
           
           if (tao > 0.0):
-              exCMS*=(tao*g_it.target[i])
+              exCMS*=(tao*target)
               WCMS+=(exCMS)
 #              for row,col in zip(rows,cols):
 #                   ((row,col), ex[row,col])
 #                   #print col, ex[row,col]
-#                   WCMS.add(col,g_it.target[i]*tao*ex[row,col])
+#                   WCMS.add(col,target*tao*ex[row,col])
 
-                 #print "Correct prediction example",i, "pred", score, "target",g_it.target[i]
+                 #print "Correct prediction example",i, "pred", score, "target",target
  
 
           if i%50==0 and i!=0:
@@ -179,6 +188,10 @@ if __name__=='__main__':
                 tn = 0
                 part_plus=0
                 part_minus=0
+end_time=time.time()
+print("Learning phase time %s seconds ---" % (end_time - features_time )) #- cms_creation
+print("Total time %s seconds ---" % (end_time - start_time))
+
 print "BER AVG", str(np.average(BERtotal)),"std", np.std(BERtotal)
 f.write("BER AVG "+ str(np.average(BERtotal))+" std "+str(np.std(BERtotal))+"\n")
 
@@ -201,21 +214,21 @@ f.close()
 #  
 #             score=PassiveAggressive.decision_function(ex)
 # 
-#         bintargets.append(g_it.target[i])
-#             if pred!=g_it.target[i]:
+#         bintargets.append(target)
+#             if pred!=target:
 #                 errors+=1
-#                 print "Error",errors," on example",i, "pred", score, "target",g_it.target[i]
-#                 if g_it.target[i]==1:
+#                 print "Error",errors," on example",i, "pred", score, "target",target
+#                 if target==1:
 #                     fn+=1
 #                 else:
 #                     fp+=1
 #             
 #             else:
-#                 if g_it.target[i]==1:
+#                 if target==1:
 #                     tp+=1
 #                 else:
 #                     tn+=1
-#                 #print "Correct prediction example",i, "pred", score, "target",g_it.target[i]
+#                 #print "Correct prediction example",i, "pred", score, "target",target
 # 
 #         else:
 #                 #first example is always an error!
