@@ -56,6 +56,9 @@ def dispatch(dataset):
     elif dataset=="Chemical1":
         print "Loading LEUK40LEUK47OV41OV50 dataset"        
         g_it=load_graphs_LEUK40LEUK47OV41OV50()
+    elif dataset=="Chemical3":
+        print "Loading LEUK40LEUK47OV41OV50LEUK40OV41LEUK47OV50 dataset"        
+        g_it=load_graphs_LEUK40LEUK47OV41OV50LEUK40OV41LEUK47OV50()
     elif dataset=="Chemical_reduced":
         print "Loading LEUK40OV41LEUK47OV50 REDUCED dataset"        
         g_it=load_graphs_LEUK40OV41LEUK47OV50_reduced()
@@ -637,6 +640,38 @@ def load_graphs_LEUK40OV41LEUK47OV50_reduced():
     labels=True,
     veclabels=False)
 
+def load_graphs_LEUK40LEUK47OV41OV50LEUK40OV41LEUK47OV50():
+    #chemical1
+    """Load the Chemical1 graph dataset for graph classification from 
+	An Empirical Study on Budget-Aware Online Kernel Algorithms for Streams of Graphs
+	G Da San Martino, N Navarin, A Sperduti
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    from obabel import obabel_to_eden
+
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_CHEMICAL_BIG/labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_CHEMICAL_BIG/stream.can'
+    _target=load_target(input_target_url)
+    label_dict={}
+    counter=[1]
+
+    g_it=obabel_to_eden(input = input_data_url,file_type ='can',dict_labels=label_dict,counter=counter)
+
+    gra=[i for i in g_it]
+    print 'Loaded Chemical graph dataset for graph classification.'
+    print len(gra),'graphs.'
+    return Bunch(graphs=gra,
+    label_dict=label_dict,
+    target=_target,
+    labels=True,
+    veclabels=False)    
+    
 def load_graphs_LMdata():
     """Load the LMdata graph dataset for graph classification..
 
