@@ -21,8 +21,9 @@ along with count-mean-sketch.  If not, see <http://www.gnu.org/licenses/>.
 """
 import hashlib
 #import array
-from numpy import median
+from numpy import median, average
 import numpy.matlib
+import numpy as np
 import copy
 class CountMinSketch(object):
     """
@@ -54,6 +55,9 @@ class CountMinSketch(object):
     possible to "count apples" and then "ask for oranges". Validation is up to
     the user.
     """
+    def asarray(self):
+        #print  np.asarray(self.tables).reshape(-1)
+        return  np.asarray(self.tables).reshape(-1)
     def __init__(self, m, d):
         """ `m` is the size of the hash tables, larger implies smaller
         overestimation. `d` the amount of hash tables, larger implies lower
@@ -104,7 +108,7 @@ class CountMinSketch(object):
         The returned value always overestimates the real value.
         """
         #Modified by Nicolo' Navarin
-        return median([self.tables[tableIndex,i] for tableIndex, i in zip(xrange(self.d), self._hash(x))])
+        return average([self.tables[tableIndex,i] for tableIndex, i in zip(xrange(self.d), self._hash(x))])
         #return min(table[i] for table, i in zip(self.tables, self._hash(x)))
 
     def __getitem__(self, x):
@@ -120,11 +124,8 @@ class CountMinSketch(object):
         """
         return self.n
     def dot(self, other):
-        dots=[]
-        for i in xrange(self.d):
-            temp=self.tables[i,:]*other.tables[i,:].T
-            dots.append(temp)
-        return median(dots)
+        return (self.asarray().dot(other.asarray()))/ float(self.d)
+
     def __add__(self, other):
         temp=copy.deepcopy(self)
         temp.tables+=other.tables

@@ -34,6 +34,7 @@ from scipy.sparse import csc_matrix
 from sklearn.utils import compute_class_weight
 from scipy.sparse import csr_matrix
 from countminsketch_unbiased_Numpy import CountMinSketch
+from itertools import izip
 
 if __name__=='__main__':
     if len(sys.argv)<1:
@@ -47,7 +48,7 @@ if __name__=='__main__':
     kernel=sys.argv[5]
     C=float(sys.argv[6])
     m=int(sys.argv[7])
-    d=int(sys.argv[7])
+    d=int(sys.argv[8])
 
     #lr=float(sys.argv[7])
     #FIXED PARAMETERS
@@ -115,12 +116,13 @@ if __name__=='__main__':
           rows,cols = ex.nonzero()
           dot=0.0
           module=0.0
-          for row,col in zip(rows,cols):
+          for row,col in izip(rows,cols):
               #((row,col), ex[row,col])
-              module+=ex[row,col]**2
+              value=ex[row,col]
+              module+=value**2
               #print col, ex[row,col]
               #dot+=WCMS[col]*ex[row,col]
-              exCMS.add(col,ex[row,col])
+              exCMS.add(col,value)
               #print dot
               #TODO aggiungere bias
               
