@@ -124,7 +124,7 @@ class CountMinSketch(object):
         """
         return self.n
 
-        def dot(self, other):
+    def dot(self, other):
          dots=[]
          for i in xrange(self.d):
              temp=self.tables[i,:]*other.tables[i,:].T
