@@ -51,15 +51,12 @@ print "hashing done"
 features=np.matrix(featuresCMS)
 print features.shape
 print features[i].shape
-#from sklearn import cross_validation
-from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import cross_val_score
-
+from sklearn import cross_validation
 for rs in range(42,53):
     f=open(str(sys.argv[3]+".seed"+str(rs)+".c"+str(c)),'w')
 
     
-    kf = StratifiedKFold(n_splits=10, shuffle=True,random_state=rs)
+    kf = cross_validation.StratifiedKFold(target_array, n_folds=10, shuffle=True,random_state=rs)
     #print kf    
     #remove column zero because
     #first entry of each line is the index
@@ -70,7 +67,7 @@ for rs in range(42,53):
 
     
     sc=[]
-    for train_index, test_index in kf.split(features,target_array):
+    for train_index, test_index in kf:
         #print("TRAIN:", train_index, "TEST:", test_index)
     
         #generated train and test lists, incuding indices of the examples in training/test
@@ -79,7 +76,7 @@ for rs in range(42,53):
             clf = svm.LinearSVC(C=c,dual=True) #, class_weight='auto'
         else:
             print "Class weights automatically assigned from training data"
-            clf = svm.LinearSVC(C=c,dual=True, class_weight='balanced')
+            clf = svm.LinearSVC(C=c,dual=True, class_weight='auto')
 
             
         #clf = svm.SVC(C=c,probability=True, class_weight='auto',kernel='linear') #,probability=True,
@@ -88,8 +85,8 @@ for rs in range(42,53):
 
         X_train, X_test, y_train, y_test = features[train_index], features[test_index], target_array[train_index], target_array[test_index]
         #COMPUTE INNERKFOLD
-        kf = StratifiedKFold(n_splits=10, shuffle=True,random_state=rs)
-        inner_scores= cross_val_score(
+        kf = cross_validation.StratifiedKFold(y_train, n_folds=10, shuffle=True,random_state=rs)
+        inner_scores= cross_validation.cross_val_score(
         clf, X_train, y_train, cv=kf, scoring='roc_auc')
         #print "inner scores", inner_scores
         print "Inner AUROC: %0.4f (+/- %0.4f)" % (inner_scores.mean(), inner_scores.std() / 2)
