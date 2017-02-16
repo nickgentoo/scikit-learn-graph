@@ -38,6 +38,14 @@ class WLVectorizer():
 #         if self.normalization:
 #             ve = normalize(ve, norm='l2', axis=1)
 #         return ve
+    def transform_incr(self, G_list):
+        #Transform returns a sparse matrix of feature vectors not normalized
+         return self.vectObject.transform_incr(G_list)
+    def getnfeatures(self):
+        return self.vectObject.getnfeatures()
+#         if self.normalization:
+#             ve = normalize(ve, norm='l2', axis=1)
+#         return ve
             
 """
         Parameters
