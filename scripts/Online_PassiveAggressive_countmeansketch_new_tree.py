@@ -88,10 +88,10 @@ if __name__=='__main__':
     features_time=time.time()
     print("Computed features in %s seconds ---" % (features_time - start_time))
     errors=0    
-    tp=0
-    fp=0
-    tn=0
-    fn=0
+    tptotal=0
+    fptotal=0
+    tntotal=0
+    fntotal=0
     predictions=[0]*50
     correct=[0]*50
     
@@ -102,6 +102,8 @@ if __name__=='__main__':
     #netTargetSet=[]
     #netKeyList=[]
     BERtotal=[]
+    F1total=[]
+
     bintargets=[1,-1]
     #print features
     #print list_for_deep.keys()
@@ -143,14 +145,21 @@ if __name__=='__main__':
              errors+=1
              if target==1:
                      fn+=1
+                     fntotal+=1
              else:
                      fp+=1
+                     fptotal += 1
+
           else:
              #print "correct classification", target
              if target==1:
                     tp+=1
+                    tptotal += 1
+
              else:
                      tn+=1
+                     tntotal += 1
+
           if(target==1):
               coef=(part_minus+1.0)/(part_plus+part_minus+1.0)
               part_plus+=1
@@ -176,15 +185,21 @@ if __name__=='__main__':
                      pos_part= float(fp) / (tn+fp)
                 else:
                      pos_part=0
+
+                recall=0.0
                 if (tp+fn) > 0:
                      neg_part=float(fn) / (tp+fn)
+
                 else:
                      neg_part=0
-                BER = 0.5 * ( pos_part  + neg_part)    
+
+                BER = 0.5 * ( pos_part  + neg_part)
                 print "1-BER Window esempio ",i, (1.0 - BER)
                 f.write("1-BER Window esempio "+str(i)+" "+str(1.0 - BER)+"\n")
-                #print>>f,"1-BER Window esempio "+str(i)+" "+str(1.0 - BER)
+
+          #print>>f,"1-BER Window esempio "+str(i)+" "+str(1.0 - BER)
                 BERtotal.append(1.0 - BER)
+
                 tp = 0
                 fp = 0
                 fn = 0
@@ -192,6 +207,10 @@ if __name__=='__main__':
                 part_plus=0
                 part_minus=0
 end_time=time.time()
+recall = float(tptotal) / (tptotal + fntotal)
+precision = float(tptotal) / float(tptotal + fptotal)
+F1 = 2.0 * ((precision * recall) / (precision + recall))
+
 print "-----------------------------------------"
 print "Total number of examples, features", i, Vectorizer.getnfeatures()
 print("Learning phase time %s seconds ---" % (end_time - features_time )) #- cms_creation
@@ -200,6 +219,8 @@ print("Total time %s seconds ---" % (end_time - start_time))
 print "BER AVG", str(np.average(BERtotal)),"std", np.std(BERtotal)
 f.write("BER AVG "+ str(np.average(BERtotal))+" std "+str(np.std(BERtotal))+"\n")
 
+print "F1 AVG", str(F1)
+f.write("F1 AVG "+ str(F1)+"\n")
 f.close()
          
           #print "N_features", ex.shape
