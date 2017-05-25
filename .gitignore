@@ -56,8 +56,3 @@ docs/_build/
 
 # PyBuilder
 target/
-
-datasets/
-tags
-*.svmlight
-*_cache.sqlite

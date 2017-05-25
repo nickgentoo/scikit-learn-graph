@@ -52,16 +52,6 @@ def drawGraph(G,indexroot=-1):
         nx.draw_networkx_nodes(G,pos1, nodelist=[indexroot], node_color='b', node_size=500)
     pylab.show()
 
-def drawRootedDAG(g):
-    labels=dict((n,d['label']) for n,d in g.nodes(data=True))
-    labels={k:str(k)+':'+v for (k,v) in labels.items()}
-    nx.write_dot(g, 'tmp.dot')
-    pos = nx.graphviz_layout(g, prog='dot')
-
-    # same layout using matplotlib with no labels
-    nx.draw(g, pos, labels=labels)
-    pylab.show()
-
 def generateDAG(G,index_start_node,height):
     """
     Given a Networkx graph G, an integer node index and an integer height returns the correspondent Decompositional DAG
@@ -83,7 +73,7 @@ def generateDAG(G,index_start_node,height):
     Dict_already_explored={} #We use a map instead of a vector since the limited depth breadth first visit can visit much fewer vertices than there are vertices in total
     Dict_already_explored[index_start_node]=True
     Deque_queue=deque([index_start_node]) #Initialize queue
-    Dict_labels=dict((n,d['label']) for n,d in G.nodes(data=True))
+#    Dict_labels=dict((n,d['label']) for n,d in G.nodes(data=True))
 #    #print G.nodes(data=True)[1]
 #    if 'veclabel' in G.nodes(data=True)[0][1]:
 #        #print "veclabels present"
@@ -101,11 +91,6 @@ def generateDAG(G,index_start_node,height):
     newdict=copy(G.node[index_start_node])
 
     newdict['depth']=0
-
-    # from Tesselli's copy
-    newdict['label'] = Dict_labels[index_start_node]
-    newdict['paths'] = 1
-
     #print newdict
     DAG.add_node(index_start_node,attr_dict=newdict)
     #print DAG[index_start_node]
@@ -117,8 +102,6 @@ def generateDAG(G,index_start_node,height):
         for v in nx.all_neighbors(G,u):
             if Dict_already_explored.get(v) and Dict_distance_from_root[u]+1 <= height and Dict_distance_from_root[v] > Dict_distance_from_root[u]:
                 DAG.add_edge(u,v)#Diamond structure detected
-                # from Tesselli's copy
-                DAG.node[v]['paths']+=DAG.node[u]['paths']
                 
             if Dict_already_explored.get(v) is None:
                 if Dict_distance_from_root[u]+1 <=height:#if next step is permitted
@@ -131,11 +114,6 @@ def generateDAG(G,index_start_node,height):
                     #DAG.add_node(v, depth=Dict_distance_from_root[v])
                     newdict=copy(G.node[v])
                     newdict['depth']=Dict_distance_from_root[v]
-
-                    # from Tesselli's copy
-                    newdict['label'] = Dict_labels[v]
-                    newdict['paths'] = DAG.node[u]['paths']
-
                     #print newdict
                     DAG.add_node(v,attr_dict=newdict)
                     #print DAG.nodes(data=True)[v]

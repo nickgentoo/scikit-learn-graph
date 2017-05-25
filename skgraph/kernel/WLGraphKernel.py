@@ -38,7 +38,7 @@ import math
 from KernelTools import convert_to_sparse_matrix
 from graphKernel import GraphKernel
 from scipy.sparse import dok_matrix
-from sklearn import preprocessing as pp
+from sklearn.preprocessing import normalize
 
 class WLGraphKernel(GraphKernel):
     """
@@ -113,7 +113,7 @@ class WLGraphKernel(GraphKernel):
         it = 0
         NewNodeIdToLabelId = copy.deepcopy(NodeIdToLabelId) #labels id of nex iteration
         
-        while it <= self.h: #each iteration compute the next labellings (that are contexts of the previous)
+        while it < self.h: #each iteration compute the next labellings (that are contexts of the previous)
             label_lookup = {}
 
             for i in range(n): #for each graph
@@ -146,7 +146,7 @@ class WLGraphKernel(GraphKernel):
             
         ve=convert_to_sparse_matrix(phi)    
         if self.normalization:
-             ve = pp.normalize(ve, norm='l2', axis=1)
+             ve = normalize(ve, norm='l2', axis=1)
         return ve
 
     def transform_incr(self, graph_list):
