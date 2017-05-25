@@ -28,6 +28,19 @@ import copy
 from itertools import izip
 from numpy import random, sqrt, log, sin, cos, pi
 from scipy.sparse import csr_matrix
+#from joblib import Parallel, delayed
+#import multiprocessing
+
+
+def processInput(i, m, rs):
+    numpy.random.seed(i + (rs * 10000))
+
+    v = numpy.random.normal(0, 1, m)
+    v = numpy.multiply(sqrt(m), v)
+    row = [idx for idx in xrange(m)]
+    col = [i for idx in xrange(m)]
+    data = v
+    return (row, col, data)
 
 class CountMinSketch(object):
     """
@@ -59,7 +72,7 @@ class CountMinSketch(object):
     possible to "count apples" and then "ask for oranges". Validation is up to
     the user.
     """
-    def __init__(self, m, samplesize):
+    def __init__(self, m, samplesize,rs):
         """ sizes is an array of hash dimensions.
         """
         if not m:
@@ -69,6 +82,7 @@ class CountMinSketch(object):
         self.n = 0
         self.m=m
         self.samplesize=samplesize
+        self.rs=rs
         #self.tables = numpy.matlib.zeros(shape=(m,samplesize))
         #self.tables=numpy.random.normal(size=(m,samplesize))
 #        for _ in xrange(d):
@@ -80,13 +94,25 @@ class CountMinSketch(object):
         #print "transformation size", self.tables.shape
         #tables=csr_matrix ((self.m,self.samplesize))
 
+        #num_cores = multiprocessing.cpu_count()
         indices=vector.nonzero()[0]
+
+        # results = Parallel(n_jobs=num_cores)(delayed(processInput)(i,self.m,self.rs) for i in indices)
+        # parrow = []
+        # parcol = []
+        # pardata = []
+        # for (row,col,v) in results:
+        #     parrow.extend(row)
+        #     parcol.extend(col)
+        #     pardata.extend(v)
+
+
         row=[]
         col=[]
         data=[]
         #print indices
         for i in indices:
-            numpy.random.seed(i)
+            numpy.random.seed(i+(self.rs*10000))
             v=numpy.random.normal(0,1,self.m)
             v=numpy.multiply(sqrt(self.m),v)
             row.extend([idx for idx in xrange(self.m)])
@@ -95,6 +121,10 @@ class CountMinSketch(object):
         tables=csr_matrix ((data,(row,col)), shape=(self.m,self.samplesize))
         transformation= numpy.tanh(tables*vector).todense()
         #print transformation.shape
+        #assert(parrow==row)
+        #assert(parcol==col)
+        #assert(pardata==data)
+
         return transformation
 
 

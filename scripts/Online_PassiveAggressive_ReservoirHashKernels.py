@@ -45,7 +45,7 @@ if __name__=='__main__':
     start_time = time.time()
 
     if len(sys.argv)<1:
-        sys.exit("python ODDKernel_example.py dataset r l filename kernel C m")
+        sys.exit("python ODDKernel_example.py dataset r l filename kernel C m rs")
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
@@ -55,13 +55,14 @@ if __name__=='__main__':
     kernel=sys.argv[5]
     C=float(sys.argv[6])
     m=int(sys.argv[7])
+    rs=int(sys.argv[8])
 
     #lr=float(sys.argv[7])
     #FIXED PARAMETERS
     normalization=False
     #working with Chemical
     g_it=load_graph_datasets.dispatch(dataset)
-    
+
     
     f=open(name,'w')
     
@@ -114,13 +115,14 @@ if __name__=='__main__':
     part_plus=0
     part_minus=0
     sizes=[5000]*50
-    transformer=CountMinSketch(m,features.shape[1])
+    transformer=CountMinSketch(m,features.shape[1],rs)
     WCMS=np.zeros(shape=(m,1))
     cms_creation=0.0
     for i in xrange(features.shape[0]):
           time1=time.time()
 
           ex=features[i][0].T
+
           exCMS=transformer.transform(ex)
           #print "exCMS", type(exCMS), exCMS.shape
           target=g_it.target[i]
