@@ -1,0 +1,19 @@
+Tutorial on how to run Online ESN learning
+
+From the main scikit-learn-graph directory run the following command
+python -m scripts/ESN_kernel Chemical_reduced radius lambda output_file kernel number_hidden_units
+
+For example,
+python -m scripts/ESN_kernel Chemical_reduced 1 1 a ODDST 0.01 500 0.001
+
+python -m scripts/ESN_kernel_PassiveAggressive Chemical_reduced 1 1 a ODDST 0.01 500 0.001
+
+
+NEW ENS for encoding features
+python -m scripts/ESN_kernel_PassiveAggressive_kernel Chemical_reduced 3 1.6 a ODDST 0.01 1000
+
+python -m scripts/ESN_kernel_correct Chemical 3 1.6 correct_noPA ODDST 0.01 1000 0.001 -->29216.pts-19.gpu04
+
+
+
+python -m scripts/ESN_kernel_PassiveAggressive Chemical_reduced 3 1.8 a ODDST 10000  500 0.001 -->configurazione che sembra funzionare-->10947.pts-2.gpu03

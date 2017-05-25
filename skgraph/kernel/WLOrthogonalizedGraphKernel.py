@@ -38,9 +38,9 @@ import math
 from KernelTools import convert_to_sparse_matrix
 from graphKernel import GraphKernel
 from scipy.sparse import dok_matrix
-from sklearn import preprocessing as pp
+from sklearn.preprocessing import normalize
 
-class WLGraphKernel(GraphKernel):
+class WLOrthogonalizedGraphKernel(GraphKernel):
     """
     Weisfeiler_Lehman graph kernel.
     """
@@ -53,10 +53,6 @@ class WLGraphKernel(GraphKernel):
         self.__fsfeatsymbol='*'
         self.__version=0
         self.__contextsymbol='@'
-        self.label_lookup = {}  # map from features to corresponding id
-        self.label_counter = 0  # incremental value for label ids
-    def getnfeatures(self):
-        return self.label_counter
 
     def kernelFunction(self, g_1, g_2):
         """Compute the kernel value (similarity) between two graphs. 
@@ -86,8 +82,9 @@ class WLGraphKernel(GraphKernel):
         TODO
         """
         n = len(graph_list) #number of graphs
-        
-        phi={} #dictionary representing the phi vector for each graph. phi[r][c]=v each row is a graph. each column is a feature
+        phi = [{} for i in range(self.h+1)]
+
+        #phi={} #dictionary representing the phi vector for each graph. phi[r][c]=v each row is a graph. each column is a feature
         
         NodeIdToLabelId = [0] * n # NodeIdToLabelId[i][j] is labelid of node j in graph i
         label_lookup = {} #map from features to corresponding id
@@ -105,12 +102,13 @@ class WLGraphKernel(GraphKernel):
                     NodeIdToLabelId[i][j] = label_lookup[graph_list[i].node[j]['label']]
                 
                 feature=self.__fsfeatsymbol+str(label_lookup[graph_list[i].node[j]['label']])
-                if not phi.has_key((i,feature)):
-                    phi[(i,feature)]=0.0
-                phi[(i,feature)]+=1.0
+                if not phi[0].has_key((i,feature)):
+                    phi[0][(i,feature)]=0.0
+                phi[0][(i,feature)]+=1.0
         
         ### MAIN LOOP
-        it = 0
+        #TOFO generate a vector for each it value
+        it = 1
         NewNodeIdToLabelId = copy.deepcopy(NodeIdToLabelId) #labels id of nex iteration
         
         while it <= self.h: #each iteration compute the next labellings (that are contexts of the previous)
@@ -136,84 +134,20 @@ class WLGraphKernel(GraphKernel):
                         NewNodeIdToLabelId[i][j] = label_lookup[long_label_string]
                         
                     feature=self.__fsfeatsymbol+str(NewNodeIdToLabelId[i][j])
-                    if not phi.has_key((i,feature)):
-                        phi[(i,feature)]=0.0
-                    phi[(i,feature)]+=1.0
+                    if not phi[it].has_key((i,feature)):
+                        phi[it][(i,feature)]=0.0
+                    phi[it][(i,feature)]+=1.0
                     
             
             NodeIdToLabelId = copy.deepcopy(NewNodeIdToLabelId) #update current labels id
             it = it + 1
-            
-        ve=convert_to_sparse_matrix(phi)    
+        
+        ve=map(convert_to_sparse_matrix,phi)    
+        #ve=convert_to_sparse_matrix(phi)    
         if self.normalization:
-             ve = pp.normalize(ve, norm='l2', axis=1)
-        return ve
-
-    def transform_incr(self, graph_list):
-        """
-        TODO
-        """
-        n = len(graph_list)  # number of graphs
-
-        phi = {}  # dictionary representing the phi vector for each graph. phi[r][c]=v each row is a graph. each column is a feature
-
-        NodeIdToLabelId = [0] * n  # NodeIdToLabelId[i][j] is labelid of node j in graph i
-
-
-        for i in range(n):  # for each graph
-            NodeIdToLabelId[i] = {}
-
-            for j in graph_list[i].nodes():  # for each node
-                if not self.label_lookup.has_key(graph_list[i].node[j][
-                                                'label']):  # update self.label_lookup and label ids from first iteration that consider node's labels
-                    self.label_lookup[graph_list[i].node[j]['label']] = self.label_counter
-                    NodeIdToLabelId[i][j] = self.label_counter
-                    self.label_counter += 1
-                else:
-                    NodeIdToLabelId[i][j] = self.label_lookup[graph_list[i].node[j]['label']]
-
-                feature = self.__fsfeatsymbol + str(self.label_lookup[graph_list[i].node[j]['label']])
-                if not phi.has_key((i, feature)):
-                    phi[(i, feature)] = 0.0
-                phi[(i, feature)] += 1.0
-
-        ### MAIN LOOP
-        it = 0
-        NewNodeIdToLabelId = copy.deepcopy(NodeIdToLabelId)  # labels id of nex iteration
-
-        while it < self.h:  # each iteration compute the next labellings (that are contexts of the previous)
-            self.label_lookup = {}
-
-            for i in range(n):  # for each graph
-                for j in graph_list[i].nodes():  # for each node, consider its neighbourhood
-                    neighbors = []
-                    for u in graph_list[i].neighbors(j):
-                        neighbors.append(NodeIdToLabelId[i][u])
-                    neighbors.sort()  # sorting neighbours
-
-                    long_label_string = str(NodeIdToLabelId[i][j]) + self.__startsymbol  # compute new labels id
-                    for u in neighbors:
-                        long_label_string += str(u) + self.__conjsymbol
-                    long_label_string = long_label_string[:-1] + self.__endsymbol
-
-                    if not self.label_lookup.has_key(long_label_string):
-                        self.label_lookup[long_label_string] = self.label_counter
-                        NewNodeIdToLabelId[i][j] = self.label_counter
-                        self.label_counter += 1
-                    else:
-                        NewNodeIdToLabelId[i][j] = self.label_lookup[long_label_string]
-
-                    feature = self.__fsfeatsymbol + str(NewNodeIdToLabelId[i][j])
-                    if not phi.has_key((i, feature)):
-                        phi[(i, feature)] = 0.0
-                    phi[(i, feature)] += 1.0
-
-            NodeIdToLabelId = copy.deepcopy(NewNodeIdToLabelId)  # update current labels id
-            it = it + 1
-
-        ve = convert_to_sparse_matrix(phi)
-        if self.normalization:
-            ve = normalize(ve, norm='l2', axis=1)
+            for i in range(len(ve)):
+              ve[i] = normalize(ve[i], norm='l2', axis=1)
+        #print type(ve)      
         return ve
 #    def transform(self, graph_list):
 #        """

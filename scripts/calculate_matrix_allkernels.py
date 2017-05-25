@@ -93,6 +93,8 @@ if __name__=='__main__':
     elif dataset=="NCI109":
         print "Loading NCI109 dataset"        
         g_it=load_graph_datasets.load_graphs_NCI109()
+    elif dataset=="MUTAG":
+	g_it=load_graph_datasets.load_graphs_MUTAG()
     else:
         print "Unknown dataset name"
      
@@ -165,3 +167,10 @@ if __name__=='__main__':
     # print(time.time()-tt, time.clock()-tc)
     # print GM
 
+   # output=open(name+".svmlight","w")
+   # for i in xrange(len(GM)):
+   #     output.write(str(g_it.target[i])+" 0:"+str(i+1)+" ")
+   #     for j in range(len(GM[i])):
+   #         output.write(str(j+1)+":"+str(GM[i][j])+" ")
+   #     output.write("\n")
+   # output.close()

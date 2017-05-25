@@ -23,7 +23,76 @@ from scipy.sparse import csr_matrix
 from ioskgraph import load_target
 from ..graph import instance_to_graph
 from sklearn.datasets.base import Bunch
-from obabel import obabel_to_eden
+#TODO import openbabel only if needed
+#from obabel import obabel_to_eden
+def dispatch(dataset):
+    if dataset=="CAS":
+        print "Loading bursi(CAS) dataset"        
+        g_it=load_graphs_bursi()
+    elif dataset=="GDD":
+        print "Loading GDD dataset"        
+        g_it=load_graphs_GDD()
+    elif dataset=="CPDB":
+        print "Loading CPDB dataset"        
+        g_it=load_graphs_CPDB()
+    elif dataset=="AIDS":
+        print "Loading AIDS dataset"        
+        g_it=load_graphs_AIDS()
+    elif dataset=="NCI1":
+        print "Loading NCI1 dataset"        
+        g_it=load_graphs_NCI1()
+    elif dataset=="NCI109":
+        print "Loading NCI109 dataset"        
+        g_it=load_graphs_NCI109()
+    elif dataset=="NCI123":
+        print "Loading NCI123 dataset"        
+        g_it=load_graphs_NCI123()
+    elif dataset=="NCI_AIDS":
+        print "Loading NCI_AIDS dataset"        
+        g_it=load_graphs_NCI_AIDS()
+    elif dataset=="Chemical2":
+        print "Loading LEUK40OV41LEUK47OV50 dataset"        
+        g_it=load_graphs_LEUK40OV41LEUK47OV50()
+    elif dataset=="Chemical1":
+        print "Loading LEUK40LEUK47OV41OV50 dataset"        
+        g_it=load_graphs_LEUK40LEUK47OV41OV50()
+    elif dataset=="Chemical3":
+        print "Loading LEUK40LEUK47OV41OV50LEUK40OV41LEUK47OV50 dataset"        
+        g_it=load_graphs_LEUK40LEUK47OV41OV50LEUK40OV41LEUK47OV50()
+    elif dataset=="Chemical_reduced":
+        print "Loading LEUK40OV41LEUK47OV50 REDUCED dataset"        
+        g_it=load_graphs_LEUK40OV41LEUK47OV50_reduced()
+    elif dataset=="MUTAG":
+        print "Loading MUTAG dataset"        
+        g_it=load_graphs_MUTAG()
+    elif dataset=="enzymes":
+        print "Loading enzymes dataset"        
+        g_it=load_graphs_enzymes()
+    elif dataset=="proteins":
+        print "Loading proteins dataset"        
+        g_it=load_graphs_proteins()       
+    elif dataset=="synthetic":
+        print "Loading synthetic dataset"        
+        g_it=load_graphs_synthetic() 
+    elif dataset=="BZR":
+        print "Loading BZR dataset"        
+        g_it=load_graphs_BZR()   
+    elif dataset=="COX2":
+        print "Loading COX2 dataset"        
+        g_it=load_graphs_COX2()   
+    elif dataset=="DHFR":
+        print "Loading DHFR dataset"        
+        g_it=load_graphs_DHFR()     
+    elif dataset=="PROTEINS_full":
+        print "Loading PROTEINS_full dataset"        
+        g_it=load_graphs_PROTEINS_full() 
+    elif dataset=="LMdata":
+        print "Loading LMdata dataset"        
+        g_it=load_graphs_LMdata() 
+    else:
+        print "Unknown dataset name"
+    return g_it
+
 def convert_to_sparse_matrix(km):
     # translate dictionary to Compressed Sparse Row matrix
         if len(km) == 0:
@@ -73,6 +142,7 @@ def load_graphs_MUTAG():
         'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
         sample.
     """
+    from obabel import obabel_to_eden
     input_target_url='http://www.math.unipd.it/~nnavarin/datasets/MUTAG/mutag_188_target.txt'
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/MUTAG/mutag_188_data.can'
     _target=load_target(input_target_url)
@@ -99,6 +169,7 @@ def load_graphs_CPDB():
     input_target_url='http://www.math.unipd.it/~nnavarin/datasets/CPDB/mutagen_labels.tab'
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/CPDB/mutagen_smile.can'
     _target=load_target(input_target_url)
+    from obabel import obabel_to_eden
     g_it=obabel_to_eden(input = input_data_url,file_type ='smi')
 
     gra=[i for i in g_it]
@@ -122,6 +193,7 @@ def load_graphs_AIDS():
     input_target_url='http://www.math.unipd.it/~nnavarin/datasets/AIDS/CAvsCM.y'
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/AIDS/CAvsCM.can'
     _target=load_target(input_target_url)
+    from obabel import obabel_to_eden
     g_it=obabel_to_eden(input = input_data_url,file_type ='smi')
 
     gra=[i for i in g_it]
@@ -145,11 +217,14 @@ def load_graphs_NCI1():
     input_target_url='http://www.math.unipd.it/~nnavarin/datasets/NCI1/NCI1_labels.txt'
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/NCI1/NCI1_graphs.gspan'
     _target=load_target(input_target_url)
+    label_dict={}
     g_it=instance_to_graph(input = input_data_url)
+    #g_it=instance_to_graph(input = input_data_url,label_dict=label_dict)
 
     print 'Loaded NCI1 graph dataset for graph classification.'
     return Bunch(graphs=[i for i in g_it],
     target=_target,
+    #label_dict=label_dict,
     labels=True,
     veclabels=False)
 
@@ -435,6 +510,8 @@ def load_graphs_NCI123():
         'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
         sample.
     """
+    from obabel import obabel_to_eden
+
     input_target_url='http://www.math.unipd.it/~nnavarin/datasets/Leukemia/leukemia_labels.txt'
     input_data_url='http://www.math.unipd.it/~nnavarin/datasets/Leukemia/leukemia.smile'
     _target=load_target(input_target_url)
@@ -465,6 +542,156 @@ def load_graphs_NCI_AIDS():
 
     print 'Loaded NCI antiHIV dataset graph dataset for graph classification.'
     return Bunch(graphs=[i for i in g_it],
+    target=_target,
+    labels=True,
+    veclabels=False)
+
+def load_graphs_LEUK40OV41LEUK47OV50():
+    #chemical2
+    """Load the Chemical2 graph dataset for graph classification from 
+	An Empirical Study on Budget-Aware Online Kernel Algorithms for Streams of Graphs
+	G Da San Martino, N Navarin, A Sperduti
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    from obabel import obabel_to_eden
+
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_LEUK40OV41LEUK47OV50/labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_LEUK40OV41LEUK47OV50/stream.can'
+    _target=load_target(input_target_url)
+    label_dict={}
+    counter=[1]
+
+    g_it=obabel_to_eden(input = input_data_url,file_type ='can',dict_labels=label_dict,counter=counter)
+
+    gra=[i for i in g_it]
+    print 'Loaded Chemical graph dataset for graph classification.'
+    print len(gra),'graphs.'
+    return Bunch(graphs=gra,
+    label_dict=label_dict,
+    target=_target,
+    labels=True,
+    veclabels=False)
+    
+def load_graphs_LEUK40LEUK47OV41OV50():
+    #chemical1
+    """Load the Chemical1 graph dataset for graph classification from 
+	An Empirical Study on Budget-Aware Online Kernel Algorithms for Streams of Graphs
+	G Da San Martino, N Navarin, A Sperduti
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    from obabel import obabel_to_eden
+
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_NEW/labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_NEW/stream.can'
+    _target=load_target(input_target_url)
+    label_dict={}
+    counter=[1]
+
+    g_it=obabel_to_eden(input = input_data_url,file_type ='can',dict_labels=label_dict,counter=counter)
+
+    gra=[i for i in g_it]
+    print 'Loaded Chemical graph dataset for graph classification.'
+    print len(gra),'graphs.'
+    return Bunch(graphs=gra,
+    label_dict=label_dict,
+    target=_target,
+    labels=True,
+    veclabels=False)
+    
+def load_graphs_LEUK40OV41LEUK47OV50_reduced():
+    """Load the Chemical graph dataset for graph classification from 
+	An Empirical Study on Budget-Aware Online Kernel Algorithms for Streams of Graphs
+	G Da San Martino, N Navarin, A Sperduti
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    from obabel import obabel_to_eden
+
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_LEUK40OV41LEUK47OV50/labels_reduced_101.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_DRIFT_LEUK40OV41LEUK47OV50/stream_reduced_101.can'
+    _target=load_target(input_target_url)
+    label_dict={}
+    counter=[1]
+    g_it=obabel_to_eden(input = input_data_url,file_type ='can',dict_labels=label_dict,counter=counter)
+
+    gra=[i for i in g_it]
+    print 'Loaded Chemical graph dataset for graph classification.'
+    print len(gra),'graphs.'
+    return Bunch(graphs=gra,
+    label_dict=label_dict,
+    target=_target,
+    labels=True,
+    veclabels=False)
+
+def load_graphs_LEUK40LEUK47OV41OV50LEUK40OV41LEUK47OV50():
+    #chemical1
+    """Load the Chemical1 graph dataset for graph classification from 
+	An Empirical Study on Budget-Aware Online Kernel Algorithms for Streams of Graphs
+	G Da San Martino, N Navarin, A Sperduti
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    from obabel import obabel_to_eden
+
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_CHEMICAL_BIG/labels.txt'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets/DATASET_CHEMICAL_BIG/stream.can'
+    _target=load_target(input_target_url)
+    label_dict={}
+    counter=[1]
+
+    g_it=obabel_to_eden(input = input_data_url,file_type ='can',dict_labels=label_dict,counter=counter)
+
+    gra=[i for i in g_it]
+    print 'Loaded Chemical graph dataset for graph classification.'
+    print len(gra),'graphs.'
+    return Bunch(graphs=gra,
+    label_dict=label_dict,
+    target=_target,
+    labels=True,
+    veclabels=False)    
+    
+def load_graphs_LMdata():
+    """Load the LMdata graph dataset for graph classification..
+
+    Returns
+    -------
+    data : Bunch
+        Dictionary-like object with the following attributes :
+        'graphs', the graphs in the dataset in Networkx format,  'target', the classification labels for each
+        sample.
+    """
+    input_target_url='http://www.math.unipd.it/~nnavarin/datasets/LMdata/labels.txt.standardized'
+    input_data_url='http://www.math.unipd.it/~nnavarin/datasets//LMdata/graphs.gspan.standardized'
+    _target=load_target(input_target_url)
+    label_dict={}
+    counter=[1]
+    g_it=instance_to_graph(input_data_url,label_dict,counter)
+
+    print 'Loaded LMdata graph dataset for graph classification.'
+    return Bunch(graphs=[i for i in g_it],
+    label_dict=label_dict,
     target=_target,
     labels=True,
     veclabels=False)

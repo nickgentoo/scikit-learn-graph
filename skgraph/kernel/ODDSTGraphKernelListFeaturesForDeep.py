@@ -19,17 +19,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
+import sys
 from graphKernel import GraphKernel
 from ..graph.GraphTools import generateDAG
 from ..graph.GraphTools import generateDAGOrdered
 from ..graph.GraphTools import orderDAGvertices
 from operator import itemgetter
-from ..graph.GraphTools import drawGraph
-from KernelTools import convert_to_sparse_matrix
+#from ..graph.GraphTools import drawGraph
+#from KernelTools import _dict_to_csr
+from KernelTools import convert_to_sparse_matrix_for_deep
+
 from sklearn.preprocessing import normalize
 import networkx as nx
 import math
-import sys
 import numpy as np
 
 class ODDSTGraphKernel(GraphKernel):
@@ -53,7 +55,7 @@ class ODDSTGraphKernel(GraphKernel):
         def getElement(self,elem):
             return self.__map.get(elem)
     
-    def __init__(self, r =3, l =1, normalization =True, ntype =0):
+    def __init__(self, r = 3, l = 1, normalization = True, one_hot_encoding={}):
         """
         Constructor
         @type r: integer number
@@ -65,58 +67,17 @@ class ODDSTGraphKernel(GraphKernel):
         @type normalization: boolean
         @param normalization: True to normalize the feature vectors
         
-        @type ntype: enum in [0,1]
-        @param ntype: 0 for default normalization, 1 for tanh normalization
-
         @type show: boolean
         @param show: If true shows graphs and DAGs during computation
         """
+        self.one_hot_encoding=one_hot_encoding
         self.Lambda=l
         self.max_radius=r
         self.normalization=normalization
-        self.normalization_type = ntype
-        self.__startsymbol='!' #special symbols used in encoding
-        self.__conjsymbol='#'
-        self.__endsymbol='?'
+        self.__startsymbol='(' #special symbols used in encoding
+        self.__conjsymbol=','
+        self.__endsymbol=')'
     
-    def computeWeightedGraphFromFeatures(self,G,features):
-        """
-        #TODO
-        """
-        featureindexes=self.getFeaturesIndexes(G)
-        wg=nx.Graph(G)
-        for u in wg.nodes():
-            wg.node[u]['weight']=0
-        for f in featureindexes.keys():
-            if not features.get(f) is None:
-                value=features.get(f)
-                DAG=self.encodingWithIndexesToDag(featureindexes[f])[0]
-                for u in DAG.nodes():
-                    wg.node[u]['weight']+=value
-        return wg
-                
-    def computeWeightedGraph(self,G):
-        """
-        Public method that weights a graph G given its features in the encoding with nodes' indexes instead of labels
-        @type G: a networkx graph
-        @param G: the graph to weight
-        
-        @rtype: networkx graph
-        @return: the weighted graph
-        """
-        dfeatures=self.getFeaturesNoCollisions(G, indexes=True)
-        wg=nx.Graph(G)
-        pairs=[]
-        for (k,v) in dfeatures.items():
-            pairs.append((self.encodingWithIndexesToDag(k)[0],v))
-            
-        for (dag,frequency) in pairs:
-            for u in dag.nodes():
-                if wg.node[u].get('weight') is None:
-                    wg.node[u]['weight']=frequency
-                else:
-                    wg.node[u]['weight']+=frequency
-        return wg
 
     def encodingWithLabelsToDag(self, encode, rootindex=0):
         """
@@ -292,18 +253,62 @@ class ODDSTGraphKernel(GraphKernel):
         """
         #feature_list = defaultdict(lambda : defaultdict(float))
         feature_list={}
-        if approximated:
-            feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesApproximated(G_orig,MapEncToId).items()})
-        else:
-            feature_list.update({(instance_id,k):v for (k,v) in self.getFeaturesNoCollisions(G_orig,MapEncToId).items()})
+        Lists_list={}
         
+        Dict_features, Dict_lists = self.getFeaturesApproximated(G_orig,MapEncToId)        
+        feature_list.update({(instance_id,k):v for (k,v) in Dict_features.items()})
+        Lists_list.update({instance_id:{k:v  for (k,v) in Dict_lists.iteritems()} })
+
 #        ve=convert_to_sparse_matrix(feature_list)    
 #        if self.normalization:
 #             ve = normalize(ve, norm='l2', axis=1)
 #        return ve
 #        return self.__normalization(feature_list)
-        return feature_list
+        return feature_list, Lists_list
+
+    def __transform_treemapping(self, G_list, approximated=True,keepdictionary=False):
+        """
+        Private method that converts a networkx graph list into a instance-features matrix
+        @type G_list: networkx graph generator
+        @param G_list: list of the graph to convert
         
+        @type approximated: boolean
+        @param approximated: true if use a hash function with probable collisions during feature decomposition. False no collision guaranteed
+        
+        @type keepdictionary: boolean
+        @param keepdictionary: True if the instance-feature matrix is kept as a dictionary. Else is a csr_matrix
+        
+        @rtype: scipy.sparse.csr_matrix
+        @return: the instance-features matrix
+        """
+        feature_dict={}
+        DAGs_dict={}
+        DAGs_new={}
+        MapEncToId=None
+        if not keepdictionary:
+            MapEncToId=self.UniqueMap()
+        for instance_id , G in enumerate( G_list ):
+           #print type(G)
+            
+           (featuredictRet, DAGs)= self.getFeaturesApproximated_treemapping(G,MapEncToId)
+           feature_dict.update({(instance_id,k):v for (k,v) in featuredictRet.items()})
+           DAGs_dict.update({(instance_id,k):v for (k,v) in DAGs.items()})
+           #print DAGs
+#        if keepdictionary:
+#            return (convert_to_sparse_matrix( feature_dict, MapEncToId ),feature_dict)
+#        else:
+#            return convert_to_sparse_matrix( feature_dict, MapEncToId )
+        ve, MapEncToId=convert_to_sparse_matrix_enc(feature_dict)   
+        print MapEncToId
+        for (i,j) in DAGs_dict.iterkeys():
+            DAGs_new[i,MapEncToId[j]]= DAGs_dict[i,j]
+        #D,M = convert_to_sparse_matrix(DAGs_dict,MapEncToId)
+        print DAGs_new
+        if self.normalization:
+             ve = normalize(ve, norm='l2', axis=1)
+        return ve,DAGs_new
+
+
     def __transform_serial(self, G_list, approximated=True,keepdictionary=False):
         """
         Private method that converts a networkx graph list into a instance-features matrix
@@ -320,22 +325,60 @@ class ODDSTGraphKernel(GraphKernel):
         @return: the instance-features matrix
         """
         feature_dict={}
+        Lists_list={}
+        Lists_list1={}
+
         MapEncToId=None
         if not keepdictionary:
             MapEncToId=self.UniqueMap()
         for instance_id , G in enumerate( G_list ):
-            
-            feature_dict.update(self.__transform( instance_id, G, approximated, MapEncToId))
+            Feat,Lists= self.__transform( instance_id, G, approximated, MapEncToId)
+            feature_dict.update(Feat)
+            Lists_list.update(Lists)
 #        if keepdictionary:
 #            return (convert_to_sparse_matrix( feature_dict, MapEncToId ),feature_dict)
 #        else:
 #            return convert_to_sparse_matrix( feature_dict, MapEncToId )
-        ve=convert_to_sparse_matrix(feature_dict)    
+        mapenctoid={}
+        ve=convert_to_sparse_matrix_for_deep(feature_dict,mapenctoid)   
+        #print mapenctoid
+        #modify featurelist in order to have the same keys
+        for key,value in Lists_list.iteritems():
+            innerList={}
+            for key1,value1 in Lists_list[key].iteritems():
+                innerList[mapenctoid[key1]]=value1
+            Lists_list1[key]=innerList
+           # Lists_list1[(key[0],mapenctoid[key[1]])]=value
+
+            
+        
+        #ve=_dict_to_csr(feature_dict)   
+
         if self.normalization:
              ve = normalize(ve, norm='l2', axis=1)
-        return ve
+        return ve, Lists_list1
     
-    
+    def transform_treemapping(self, G_list, n_jobs = -1, approximated=True, keepdictionary=False):
+        """
+        Public method that given a list of networkx graph it creates the sparse matrix (example, features) in parallel or serial
+        @type G_list: networkx graph generator
+        @param G_list: list of the graph to convert
+        
+        @type n_jobs: integer number
+        @param n_jobs: number of parallel jobs
+        
+        @type approximated: boolean        mult=1.0
+        if i>13 and i<
+        @param approximated: true if use a hash function with probable collisions during feature decomposition. False no collision guaranteed
+        
+        @type keepdictionary: boolean
+        @param keepdictionary: True if the instance-feature matrix is kept as a dictionary. Else is a csr_matrix
+        
+        @rtype: scipy.sparse.csr_matrix
+        @return: the instance-features matrix
+        """
+        return self.__transform_treemapping(G_list,approximated,keepdictionary)
+        
     def transform(self, G_list, n_jobs = -1, approximated=True, keepdictionary=False):
         """
         Public method that given a list of networkx graph it creates the sparse matrix (example, features) in parallel or serial
@@ -557,7 +600,9 @@ class ODDSTGraphKernel(GraphKernel):
         @rtype: dictionary
         @return: the encoding-feature dictionary
         """
+        #print "Approximated Features"
         Dict_features={}
+        Dict_lists={}
         for v in G.nodes():
             if G.node[v]['viewpoint']:
                 if not G.graph['ordered']:
@@ -566,7 +611,7 @@ class ODDSTGraphKernel(GraphKernel):
                 else:
                     (DAG,maxLevel)=generateDAGOrdered(G, v, self.max_radius)
             
-                    
+                MapNodeToLists={}    
                 MapNodeToProductionsID={} #k:list(unsigned)
                 MapNodetoFrequencies={} #k:list(int)
                 for u in DAG.nodes():
@@ -583,23 +628,28 @@ class ODDSTGraphKernel(GraphKernel):
                             max_child_height = child_height
                             
                     for depth in xrange(max_child_height+1):
+                        if not u in MapNodeToLists:
+                            MapNodeToLists[u]=[[]]
+                        else :
+                            MapNodeToLists[u].append([])
                         if depth==0:
                             enc=hash(str(DAG.node[u]['label']))
+                            #TEST enc=str(DAG.node[u]['label'])
                             
                             MapNodeToProductionsID[u].append(enc)
+                            MapNodeToLists[u][depth]=[self.one_hot_encoding[str(DAG.node[u]['label'])]]
+                            #print type(MapNodeToLists[u][depth]),type(MapNodeToLists[u][depth][0])
+                            #print "depth 0", MapNodeToLists[u][depth]
                             
                             frequency=0
                             if max_child_height==0:
                                 frequency=maxLevel - DAG.node[u]['depth']
-                            
-                            weight = float(frequency+1.0)*math.sqrt(self.Lambda)
-                            if self.normalization and self.normalization_type == 1:
-                                weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
-
+                            #print enc, MapNodeToLists[u][depth]
+                            Dict_lists[enc]=  MapNodeToLists[u][depth]
                             if Dict_features.get(enc) is None:
-                                Dict_features[enc] = weight
+                                Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
                             else:
-                                Dict_features[enc] += weight
+                                Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
                             
                             if not MapEncToId is None:
                                 MapEncToId.addElement(enc)
@@ -609,15 +659,20 @@ class ODDSTGraphKernel(GraphKernel):
                         else:
                             size=0
                             encoding=str(DAG.node[u]['label'])
-                            
+                            new_string=[ self.one_hot_encoding[str(DAG.node[u]['label'])]]
+                            #print "new_string",type(new_string),type(new_string[0])
+
                             vertex_label_id_list=[]#list[string]
                             min_freq_children=sys.maxint
-                            
+                            child_hash_list={}
                             for child in DAG.successors(u):
                                 size_map=len(MapNodeToProductionsID[child])
                                 child_hash=MapNodeToProductionsID[child][min(size_map,depth)-1]
                                 freq_child=MapNodetoFrequencies[child][min(size_map,depth)-1]
-                                
+                                child_hash_list[child_hash]=MapNodeToLists[child][min(size_map,depth)-1]
+                                #print "child_hash",type(child_hash_list[child_hash]),type(child_hash_list[child_hash][0])
+
+                                #print "child_hash_list", child_hash_list[child_hash]
                                 if freq_child<min_freq_children:
                                     min_freq_children=freq_child
                                 
@@ -625,35 +680,66 @@ class ODDSTGraphKernel(GraphKernel):
                                 size+=MapProductionIDtoSize[child_hash]
                             
                             vertex_label_id_list.sort()
+                            feature_list=[]
                             encoding+=self.__startsymbol+str(vertex_label_id_list[0])
-                            
+                            #print "child 0",child_hash_list[vertex_label_id_list[0]]
+                            #new_string+=self.__startsymbol+''.join(child_hash_list[vertex_label_id_list[0]])
+                            #new_string+=self.__startsymbol+child_hash_list[vertex_label_id_list[0]][-1]
+                            new_string.append(self.one_hot_encoding['P'])
+                            #print "child_hash2",type(child_hash_list[vertex_label_id_list[0]]),type(child_hash_list[vertex_label_id_list[0]][-1][0])
+
+                            new_string.extend(child_hash_list[vertex_label_id_list[0]])
+
+                            #MapNodeToLists[u][depth]+=child_hash_list[vertex_label_id_list[0]]
+
                             for i in range(1,len(vertex_label_id_list)):
                                 encoding+=self.__conjsymbol+str(vertex_label_id_list[i])
-                            
+                                #new_string+=self.__conjsymbol+''.join(child_hash_list[vertex_label_id_list[i]])
+                                #print "child",i, child_hash_list[vertex_label_id_list[i]]
+                                
+                                new_string.append(child_hash_list[vertex_label_id_list[i]][-1])
+                                #new_string+=self.__conjsymbol+child_hash_list[vertex_label_id_list[i]][-1]
+                                
+                                #MapNodeToLists[u][depth]+=child_hash_list[vertex_label_id_list[i]]
+
+                                #feature_list.append(child_hash_list[vertex_label_id_list[i]])
+                                #print new_string
                             encoding+=self.__endsymbol
+                            new_string.append(self.one_hot_encoding['N'] )
+
                             encoding=hash(encoding)
+#                            if not u in MapNodeToLists:
+#                                MapNodeToLists[u]=[[new_string]]
+#                            else:
+                            MapNodeToLists[u][depth]=new_string
                             
+                            #print "depth ",depth,encoding, MapNodeToLists[u][depth]
+                            Dict_lists[encoding]=  MapNodeToLists[u][depth]
+
+
                             MapNodeToProductionsID[u].append(encoding)
+                            #size*=2 #TODO bug Navarin
                             size+=1
                             MapProductionIDtoSize[encoding]=size
                             
                             frequency = min_freq_children
                             MapNodetoFrequencies[u].append(frequency)
-                            
-                            weight = float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                            if self.normalization and self.normalization_type == 1:
-                                weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
-
-
                             if Dict_features.get(encoding) is None:
-                                Dict_features[encoding] = weight
+                                Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
                             else:
-                                Dict_features[encoding] += weight
-                            
+                                Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            #TANH TEST
+#                            if Dict_features.get(encoding) is None:
+#                                Dict_features[encoding]=float(frequency+1.0)*math.sqrt(self.Lambda*size)
+#                            else:
+#                                Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(self.Lambda*size)
                             if not MapEncToId is None:
                                 MapEncToId.addElement(encoding)    
+        return Dict_features, Dict_lists
+        
+  
+        
 
-        return Dict_features
         
     def kernelFunction(self,Graph1, Graph2):
         """
