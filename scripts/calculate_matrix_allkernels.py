@@ -19,61 +19,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 import sys
-# import time
 from skgraph.kernel.WLGraphKernel import WLGraphKernel
 from skgraph.kernel.ODDSTGraphKernel import ODDSTGraphKernel
 from skgraph.kernel.NSPDKGraphKernel import NSPDKGraphKernel
-from skgraph.kernel.ODDSTPGraphKernel import ODDSTPGraphKernel
-from skgraph.kernel.WLCGraphKernel import WLCGraphKernel
-from skgraph.kernel.ODDSTCGraphKernel import ODDSTCGraphKernel
-from skgraph.kernel.ODDSTPCGraphKernel import ODDSTPCGraphKernel
-from skgraph.kernel.WLDDKGraphKernel import WLDDKGraphKernel
-from skgraph.kernel.WLNSKGraphKernel import WLNSKGraphKernel
 
 from skgraph.datasets import load_graph_datasets
 import numpy as np
 
 if __name__=='__main__':
-    if len(sys.argv)<2:
-        sys.exit("python -m calculate_matrix_allkernels dataset r l filename kernel [normalization] [version] [norm_split] [normalization_type] [h]")
-
-    # mandatory & fixed parameters
-
+    if len(sys.argv)<5:
+        sys.exit("python ODDKernel_example.py dataset r l filename kernel")
     dataset=sys.argv[1]
     max_radius=int(sys.argv[2])
     la=float(sys.argv[3])
+    #hashs=int(sys.argv[3])
+    njobs=1
     name=str(sys.argv[4])
     kernel=sys.argv[5]
-    njobs=1
-
-    # optional parameters
-
-    # normalization as an integer encoded boolean [0|1]
-    normalization = True
-    if len(sys.argv) > 6:
-        normalization = bool(sys.argv[6])
-
-    # kernel version as an integer encoded enum [0|1] (default: 1)
-    version = 1
-    if len(sys.argv) > 7:
-        version = int(sys.argv[7])
-
-    # normalization split as an integer encoded bool [0|1]
-    nsplit = False
-    if len(sys.argv) > 8:
-        nsplit = bool(sys.argv[8])
-
-    # normalization type as an integer encoded enum [0|1|...]
-    ntype = 0
-    if len(sys.argv) > 9:
-        ntype = int(sys.argv[9])
-
-    # iteration count for WL extended kernels only, integer
-    iterations = 1
-    if len(sys.argv) > 10:
-        iterations = int(sys.argv[10])
+    #FIXED PARAMETERS
+    normalization=False 
     
     if dataset=="CAS":
         print "Loading bursi(CAS) dataset"        
@@ -105,34 +70,14 @@ if __name__=='__main__':
         ODDkernel=WLGraphKernel(r=max_radius,normalization=normalization)
     elif kernel=="ODDST":
         print "Using ST kernel"
-        ODDkernel=ODDSTGraphKernel(r=max_radius,l=la,normalization=normalization)#,ntype=ntype)
-    elif kernel=="ODDSTP":
-        print "Using ST+ kernel"
-        ODDkernel=ODDSTPGraphKernel(r=max_radius,l=la,normalization=normalization,ntype=ntype,nsplit=nsplit)
+        ODDkernel=ODDSTGraphKernel(r=max_radius,l=la,normalization=normalization)
     elif kernel=="NSPDK":
         print "Using NSPDK kernel, lambda parameter interpreted as d"
         ODDkernel=NSPDKGraphKernel(r=max_radius,d=int(la),normalization=normalization)
-    elif kernel=="ODDSTC":
-        print "Using ST kernel with contexts"
-        ODDkernel=ODDSTCGraphKernel(r=max_radius,l=la,normalization=normalization,version=version,ntype=ntype,nsplit=nsplit)
-    elif kernel=="ODDSTPC":
-        print "Using ST+ kernel with contexts"
-        ODDkernel=ODDSTPCGraphKernel(r=max_radius,l=la,normalization=normalization,version=version,ntype=ntype,nsplit=nsplit)
-    elif kernel=="WLC":
-        print "Lambda ignored"
-        print "Using WL fast subtree kernel with contexts"
-        ODDkernel=WLCGraphKernel(r=max_radius,normalization=normalization,version=version)
-    elif kernel=="WLDDK":
-        print "Using ST base kernel with WL kernel"
-        ODDkernel=WLDDKGraphKernel(r=max_radius,h=iterations,l=la,normalization=normalization)
-    elif kernel=="WLNSK":
-        print "Using NS base kernel with WL kernel"
-        ODDkernel=WLNSKGraphKernel(r=max_radius,h=iterations,l=la,normalization=normalization)
     else:
         print "Unrecognized kernel"
        
     GM=ODDkernel.computeKernelMatrixTrain(g_it.graphs) #Parallel ,njobs
-
     #print GM
 #    GMsvm=[]    
 #    for i in xrange(len(GM)):
@@ -145,32 +90,15 @@ if __name__=='__main__':
 #    #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
 #    datasets.dump_svmlight_file(np.array(GMsvm),g_it.target, name+".svmlight")
 #    #Test manual dump
-
-    # tt = time.time()
-    # tc = time.clock()
-
     print "Saving Gram matrix"
-    #output=open(name+".svmlight","w")
-    #for i in xrange(len(GM)):
-    #    output.write(str(g_it.target[i])+" 0:"+str(i+1)+" ")
-    #    for j in range(len(GM[i])):
-    #        output.write(str(j+1)+":"+str(GM[i][j])+" ")
-    #    output.write("\n")
-
-    #output.close()
-
-    # print GMsvm
-    # from sklearn import datasets
-    from sklearn.datasets import dump_svmlight_file
-    dump_svmlight_file(GM, g_it.target, name+".svmlight")
-
-    # print(time.time()-tt, time.clock()-tc)
-    # print GM
-
-   # output=open(name+".svmlight","w")
-   # for i in xrange(len(GM)):
-   #     output.write(str(g_it.target[i])+" 0:"+str(i+1)+" ")
-   #     for j in range(len(GM[i])):
-   #         output.write(str(j+1)+":"+str(GM[i][j])+" ")
-   #     output.write("\n")
-   # output.close()
+    output=open(name+".svmlight","w")
+    for i in xrange(len(GM)):
+        output.write(str(g_it.target[i])+" 0:"+str(i+1)+" ")
+        for j in range(len(GM[i])):
+            output.write(str(j+1)+":"+str(GM[i][j])+" ")
+        output.write("\n")
+    output.close()
+    #print GMsvm
+    from sklearn import datasets
+    #datasets.dump_svmlight_file(GMsvm,g_it.target, name+".svmlight")
+    #print GM

@@ -53,7 +53,7 @@ class ODDSTGraphKernel(GraphKernel):
         def getElement(self,elem):
             return self.__map.get(elem)
     
-    def __init__(self, r =3, l =1, normalization =True, ntype =0):
+    def __init__(self, r = 3, l = 1, normalization = True):
         """
         Constructor
         @type r: integer number
@@ -65,16 +65,12 @@ class ODDSTGraphKernel(GraphKernel):
         @type normalization: boolean
         @param normalization: True to normalize the feature vectors
         
-        @type ntype: enum in [0,1]
-        @param ntype: 0 for default normalization, 1 for tanh normalization
-
         @type show: boolean
         @param show: If true shows graphs and DAGs during computation
         """
         self.Lambda=l
         self.max_radius=r
         self.normalization=normalization
-        self.normalization_type = ntype
         self.__startsymbol='!' #special symbols used in encoding
         self.__conjsymbol='#'
         self.__endsymbol='?'
@@ -592,14 +588,10 @@ class ODDSTGraphKernel(GraphKernel):
                             if max_child_height==0:
                                 frequency=maxLevel - DAG.node[u]['depth']
                             
-                            weight = float(frequency+1.0)*math.sqrt(self.Lambda)
-                            if self.normalization and self.normalization_type == 1:
-                                weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(self.Lambda))
-
                             if Dict_features.get(enc) is None:
-                                Dict_features[enc] = weight
+                                Dict_features[enc]=float(frequency+1.0)*math.sqrt(self.Lambda)
                             else:
-                                Dict_features[enc] += weight
+                                Dict_features[enc]+=float(frequency+1.0)*math.sqrt(self.Lambda)
                             
                             if not MapEncToId is None:
                                 MapEncToId.addElement(enc)
@@ -634,22 +626,22 @@ class ODDSTGraphKernel(GraphKernel):
                             encoding=hash(encoding)
                             
                             MapNodeToProductionsID[u].append(encoding)
+                            #size*=2 #TODO bug Navarin
                             size+=1
                             MapProductionIDtoSize[encoding]=size
                             
                             frequency = min_freq_children
                             MapNodetoFrequencies[u].append(frequency)
-                            
-                            weight = float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
-                            if self.normalization and self.normalization_type == 1:
-                                weight = math.tanh(float(frequency+1.0))*math.tanh(math.sqrt(math.pow(self.Lambda,size)))
-
 
                             if Dict_features.get(encoding) is None:
-                                Dict_features[encoding] = weight
+                                Dict_features[encoding]=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
                             else:
-                                Dict_features[encoding] += weight
-                            
+                                Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(math.pow(self.Lambda,size))
+                            #TANH TEST
+#                            if Dict_features.get(encoding) is None:
+#                                Dict_features[encoding]=float(frequency+1.0)*math.sqrt(self.Lambda*size)
+#                            else:
+#                                Dict_features[encoding]+=float(frequency+1.0)*math.sqrt(self.Lambda*size)
                             if not MapEncToId is None:
                                 MapEncToId.addElement(encoding)    
 
