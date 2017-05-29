@@ -23,7 +23,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
-import sys
+import os,sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir)
 from skgraph.feature_extraction.graph.ODDSTVectorizer import ODDSTVectorizer
 from skgraph.feature_extraction.graph.WLVectorizer import WLVectorizer
 
@@ -33,7 +36,7 @@ import numpy as np
 from scipy.sparse import csc_matrix
 from sklearn.utils import compute_class_weight
 from scipy.sparse import csr_matrix
-from countminsketch_Numpy import CountMinSketch
+from countminsketch_Numpy_rs import CountMinSketch
 from itertools import izip
 import time
 if __name__=='__main__':
@@ -51,6 +54,7 @@ if __name__=='__main__':
     C=float(sys.argv[6])
     m=int(sys.argv[7])
     d=int(sys.argv[8])
+    rs=int(sys.argv[9])
 
     #lr=float(sys.argv[7])
     #FIXED PARAMETERS
@@ -109,11 +113,11 @@ if __name__=='__main__':
     tn = 0
     part_plus=0
     part_minus=0
-    WCMS=CountMinSketch(m,d)
+    WCMS=CountMinSketch(m,d,rs)
     cms_creation=0.0
     for i in xrange(features.shape[0]):
           time1=time.time()
-          exCMS=CountMinSketch(m,d)
+          exCMS=CountMinSketch(m,d,rs)
 
           ex=features[i][0]
           target=g_it.target[i]
