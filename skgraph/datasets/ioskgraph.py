@@ -22,10 +22,10 @@ You should have received a copy of the GNU General Public License
 along with scikit-learn-graph.  If not, see <http://www.gnu.org/licenses/>.
 """
 import requests
-import requests_cache
+#import requests_cache
 import numpy as np
 
-requests_cache.install_cache('bioinfogen_cache')
+#requests_cache.install_cache('bioinfogen_cache')
 
 def read(uri):
     """
