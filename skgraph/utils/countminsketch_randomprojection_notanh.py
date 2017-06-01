@@ -59,7 +59,7 @@ class CountMinSketch(object):
     possible to "count apples" and then "ask for oranges". Validation is up to
     the user.
     """
-    def __init__(self, m, samplesize):
+    def __init__(self, m, samplesize,rs):
         """ sizes is an array of hash dimensions.
         """
         if not m:
@@ -69,6 +69,7 @@ class CountMinSketch(object):
         self.n = 0
         self.m=m
         self.samplesize=samplesize
+        self.rs=rs
         #self.tables = numpy.matlib.zeros(shape=(m,samplesize))
         #self.tables=numpy.random.normal(size=(m,samplesize))
 #        for _ in xrange(d):
@@ -86,7 +87,7 @@ class CountMinSketch(object):
         data=[]
         #print indices
         for i in indices:
-            numpy.random.seed(i)
+            numpy.random.seed(i+(self.rs*10000))
             v=numpy.random.normal(0,1,self.m)
             v=numpy.multiply(sqrt(self.m),v)
             row.extend([idx for idx in xrange(self.m)])
