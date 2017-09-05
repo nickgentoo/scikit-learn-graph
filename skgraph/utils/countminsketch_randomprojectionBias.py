@@ -30,7 +30,7 @@ from numpy import random, sqrt, log, sin, cos, pi
 from scipy.sparse import csr_matrix, linalg
 #from joblib import Parallel, delayed
 #import multiprocessing
-
+import scipy
 
 def processInput(i, m, rs):
     numpy.random.seed(i + (rs * 10000))
@@ -100,7 +100,7 @@ class CountMinSketch(object):
         #num_cores = multiprocessing.cpu_count()
         indices=vector.nonzero()[0]
         #print vector.shape
-        norm=linalg.norm(vector,1,axis=0)[0]
+        norm=scipy.linalg.norm(vector,1,axis=0)[0]
         #print norm
 
         # results = Parallel(n_jobs=num_cores)(delayed(processInput)(i,self.m,self.rs) for i in indices)
