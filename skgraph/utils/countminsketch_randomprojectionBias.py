@@ -100,7 +100,7 @@ class CountMinSketch(object):
         #num_cores = multiprocessing.cpu_count()
         indices=vector.nonzero()[0]
         #print vector.shape
-        norm=scipy.linalg.norm(vector,1,axis=0)[0]
+        norm=scipy.sparse.linalg.norm(vector,1)
         #print norm
 
         # results = Parallel(n_jobs=num_cores)(delayed(processInput)(i,self.m,self.rs) for i in indices)
