@@ -124,7 +124,7 @@ if __name__=='__main__':
 
           ex=features[i][0].T
 
-          exCMS, derivative=transformer.transform(ex)
+          exCMS=transformer.transform(ex)
           #print "exCMS", type(exCMS), exCMS.shape
           target=g_it.target[i]
           #W=csr_matrix(ex)
@@ -156,20 +156,32 @@ if __name__=='__main__':
           if(target==1):
               coef=(part_minus+1.0)/(part_plus+part_minus+1.0)
               part_plus+=1
+              ratio=float(part_minus)/part_plus
+              ratio=max(1,int(ratio))
+              #print " + ratio", ratio
+
           else:
               coef=(part_plus+1.0)/(part_plus+part_minus+1.0)
               part_minus+=1
+              ratio=float(part_plus)/part_minus
+              ratio=max(1,int(ratio))
+              #print " - ratio", ratio
+
+
+
           tao = min (C, max (0.0,( (1.0 - target*dot )*coef) / module ) );
           
           if (tao > 0.0):
+              #print "ratio", min(1,int(ratio))
               WCMS+=(exCMS*(tao*target))
               #print "W", WCMS.shape
               #print "Wtarget", (WCMS*target).shape
               #print "derivative", derivative.shape
 
               #test update biases
-
-              transformer.updatebias(derivative,( WCMS*target)  ,alpha)
+              #print "ratio",ratio
+              for _ in xrange(ratio):
+                transformer.updatebias(( WCMS*target)  ,alpha)
 #              for row,col in zip(rows,cols):
 #                   ((row,col), ex[row,col])
 #                   #print col, ex[row,col]
@@ -208,7 +220,7 @@ f.write("BER AVG "+ str(np.average(BERtotal))+" std "+str(np.std(BERtotal))+"\n"
 
 f.close()
 transformer.removetmp()
-         
+
           #print "N_features", ex.shape
         #generate explicit W from CountMeanSketch 
          #print W

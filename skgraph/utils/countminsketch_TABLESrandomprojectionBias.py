@@ -185,22 +185,28 @@ class CountMinSketch(object):
         #assert(pardata==data)
         #TODO return vector in which i-th (1-tanh(R_i\phi(g) +norm*\mu_i)^2 * norm)
         #then just multiply each entry by y w_i to get the gradient
-        val2= norm*self.mus
+        self.norm=norm
+        val2= self.norm*self.mus
         #print "val2", val2.shape
         #print "tablesnobias", tables_nobias.shape
         #print "vector", vector.shape
-        val1= (np.multiply(tables_nobias,vector)).todense()
-        val3=val1+val2
+        self.Rphix= (np.multiply(tables_nobias,vector)).todense()
+        val3=self.Rphix+val2
         #print "val3",val3.shape
         ones = np.ones(self.m).reshape(self.m,1)
         #print "ones", ones.shape
         derivative= np.multiply((ones-numpy.square(numpy.tanh(val3))),norm)
         #print derivative
 
-        return transformation, derivative # Probably I'll need to return v (to compute the bs)
+        return transformation # Probably I'll need to return v (to compute the bs)
 
 
-    def updatebias(self, derivative, yw, step):
+    def updatebias(self, yw, step):
+        val2= self.norm*self.mus
+        val3=self.Rphix+val2
+        ones = np.ones(self.m).reshape(self.m,1)
+        derivative= np.multiply((ones-numpy.square(numpy.tanh(val3))),self.norm)
+
         yw=np.asarray(yw)
         ywstep=np.asarray(np.multiply(yw,step))
         #print "---UPDATE BIAS-----"
@@ -214,3 +220,5 @@ class CountMinSketch(object):
 
     def removetmp(self):
         os.remove(self.filename)
+        print "removed temporary file"
+
