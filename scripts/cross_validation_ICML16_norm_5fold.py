@@ -56,6 +56,9 @@ def my_custom_loss_func(ground_truth, predictions):
     return total_loss / len(predictions)
 
 from sklearn import cross_validation
+import time
+
+start = time.time()
 for rs in range(42,43):
 #for rs in range(42,53):
     f=open(str(sys.argv[3]+".seed"+str(rs)+".c"+str(c)),'w')
@@ -137,6 +140,8 @@ for rs in range(42,43):
         f.write(str( my_custom_loss_func(y_test, y_test_predicted))+"\n")
 
     f.close()
+end = time.time()
+print "Total time:", end-start
 scores=np.array(sc)
 print "Accuracy: %0.4f (+/- %0.4f)" % (scores.mean(), scores.std() / 2)
     
