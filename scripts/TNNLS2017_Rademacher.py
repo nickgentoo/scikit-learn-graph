@@ -8,10 +8,9 @@ from math import sqrt
 from copy import copy
 import sys
 #"sys.path.append('..\\..\\Multiple Kernel Learning\\Framework')"
-if len(sys.argv)<3:
-    sys.exit("python cross_validation_from_matrix_norm.py inputMatrix.libsvm C")
+if len(sys.argv)<2:
+    sys.exit("python cross_validation_from_matrix_norm.py inputMatrix.libsvm")
 
-c=float(sys.argv[2])
 
 ##TODO read from libsvm format
 from sklearn.datasets import load_svmlight_file
