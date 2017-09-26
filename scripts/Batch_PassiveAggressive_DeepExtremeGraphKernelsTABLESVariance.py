@@ -28,6 +28,7 @@ import os,sys,inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
+from sklearn.model_selection import train_test_split
 import sys
 from skgraph.feature_extraction.graph.ODDSTVectorizer import ODDSTVectorizer
 from skgraph.feature_extraction.graph.WLVectorizer import WLVectorizer
@@ -65,11 +66,11 @@ if __name__=='__main__':
     #working with Chemical
     g_it=load_graph_datasets.dispatch(dataset)
     epochs=2
-    
+
     f=open(name,'w')
 
     from random import shuffle
-    
+
     #At this point, one_hot_encoding contains the encoding for each symbol in the alphabet
     if kernel=="WL":
         print "Lambda ignored"
@@ -96,9 +97,15 @@ if __name__=='__main__':
     Xind=xrange(features.shape[0])
     random.seed(42)
     k_fold = KFold(n_splits=3)
-    bestaccs=[0.0]*3
+    bestaccsval=[0.0]*3
+    bestaccstest=[0.0]*3
+
     fold_index=-1
-    for train_indices, test_indices in k_fold.split(Xind):
+    for train_val_indices, test_indices in k_fold.split(Xind):
+        train_indices, val_indices = train_test_split(train_val_indices, test_size=.20, random_state=0)
+        #print train_indices
+        #print val_indices
+
         fold_index+=1
         errors=0
         tp=0
@@ -235,28 +242,45 @@ if __name__=='__main__':
                     tn = 0
                     part_plus=0
                     part_minus=0
-            print "classify validation set"
-            predictions=[]
+            print "classify Validation set"
+            predictionsval=[]
+            for i in val_indices:
+                ex = features[i][0].T
+
+                exCMS = transformer.transform(ex)
+                dot = np.dot(WCMS.T, exCMS)[0, 0]
+                pred=np.sign(dot)
+                predictionsval.append(pred)
+            #print "predictions"
+            #todo test on validation set until convergence, than on test set
+            accval= accuracy_score(predictionsval, g_it.target[val_indices])
+            print "Validation set Accuracy:", accval
+
+            #print "classify Test set"
+            predictionstest=[]
             for i in test_indices:
                 ex = features[i][0].T
 
                 exCMS = transformer.transform(ex)
                 dot = np.dot(WCMS.T, exCMS)[0, 0]
                 pred=np.sign(dot)
-                predictions.append(pred)
-            print "predictions"
+                predictionstest.append(pred)
+            #print "predictions"
             #todo test on validation set until convergence, than on test set
-            acc= accuracy_score(predictions, g_it.target[test_indices])
-            print "Test set Accuracy:", acc
-            if acc > bestaccs[fold_index]:
-                bestaccs[fold_index]=acc
+            acctest= accuracy_score(predictionstest, g_it.target[test_indices])
+            print "Test set Accuracy:", acctest
+            if accval > bestaccsval[fold_index]:
+                bestaccsval[fold_index]=accval
+                bestaccstest[fold_index]=acctest
+
         transformer.removetmp()
 
 end_time=time.time()
 print("Learning phase time %s seconds ---" % (end_time - features_time )) #- cms_creation
 print("Total time %s seconds ---" % (end_time - start_time))
+print "DEBUG: AVG Accuracy Validation set", str(np.average(bestaccsval)),"std", np.std(bestaccsval)
 
-print "AVG Accuracy", str(np.average(bestaccs)),"std", np.std(bestaccs)
+print "AVG Accuracy Test set", str(np.average(bestaccstest)),"std", np.std(bestaccstest)
 #f.write("BER AVG "+ str(np.average(BERtotal))+" std "+str(np.std(BERtotal))+"\n")
 
 f.close()

@@ -107,9 +107,9 @@ class CountMinSketch(object):
         #filename= "test"
         self.filename=filename+'.h5'
 
-        h5file = tb.open_file(self.filename, mode='w', title="Random Projection Matrix")
-        root = h5file.root
-        self.x = h5file.create_carray(root, 'x', tb.Float64Atom(), shape=(self.samplesize, self.m))
+        self.h5file = tb.open_file(self.filename, mode='w', title="Random Projection Matrix")
+        root = self.h5file.root
+        self.x = self.h5file.create_carray(root, 'x', tb.Float64Atom(), shape=(self.samplesize, self.m))
         print "generating matrix of shape", self.samplesize, self.m
         for i in range(self.samplesize):
             numpy.random.seed(i + (self.rs * 10000))
@@ -274,6 +274,7 @@ class CountMinSketch(object):
         #print self.mus.shape
 
     def removetmp(self):
+        self.h5file.close()
         os.remove(self.filename)
         print "removed temporary file"
 
