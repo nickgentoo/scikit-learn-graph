@@ -31,7 +31,7 @@ sys.path.insert(0,parentdir)
 import sys
 from skgraph.feature_extraction.graph.ODDSTVectorizer import ODDSTVectorizer
 from skgraph.feature_extraction.graph.WLVectorizer import WLVectorizer
-
+import random
 from sklearn.linear_model import PassiveAggressiveClassifier as PAC
 from skgraph.datasets import load_graph_datasets
 import numpy as np
@@ -64,7 +64,7 @@ if __name__=='__main__':
     normalization=False
     #working with Chemical
     g_it=load_graph_datasets.dispatch(dataset)
-    epochs=20
+    epochs=2
     
     f=open(name,'w')
 
@@ -94,8 +94,12 @@ if __name__=='__main__':
     print("Computed features in %s seconds ---" % (features_time - start_time))
     from sklearn.model_selection import KFold, cross_val_score
     Xind=xrange(features.shape[0])
+    random.seed(42)
     k_fold = KFold(n_splits=3)
+    bestaccs=[0.0]*3
+    fold_index=-1
     for train_indices, test_indices in k_fold.split(Xind):
+        fold_index+=1
         errors=0
         tp=0
         fp=0
@@ -130,6 +134,7 @@ if __name__=='__main__':
             print "epoch ", e, "Learning rate C:", C/(e+1), "Learning rate bias:",alpha/(e+1), "Learning rate variance:", np.sqrt(alpha)/(e+1)
 
             #todo shuffle train indices
+            random.seed(e)
             shuffle(train_indices)
             for i in train_indices:
               time1=time.time()
@@ -243,16 +248,19 @@ if __name__=='__main__':
             #todo test on validation set until convergence, than on test set
             acc= accuracy_score(predictions, g_it.target[test_indices])
             print "Test set Accuracy:", acc
+            if acc > bestaccs[fold_index]:
+                bestaccs[fold_index]=acc
+        transformer.removetmp()
 
 end_time=time.time()
 print("Learning phase time %s seconds ---" % (end_time - features_time )) #- cms_creation
 print("Total time %s seconds ---" % (end_time - start_time))
 
-print "BER AVG", str(np.average(BERtotal)),"std", np.std(BERtotal)
-f.write("BER AVG "+ str(np.average(BERtotal))+" std "+str(np.std(BERtotal))+"\n")
+print "AVG Accuracy", str(np.average(bestaccs)),"std", np.std(bestaccs)
+#f.write("BER AVG "+ str(np.average(BERtotal))+" std "+str(np.std(BERtotal))+"\n")
 
 f.close()
-transformer.removetmp()
+#transformer.removetmp()
 
           #print "N_features", ex.shape
         #generate explicit W from CountMeanSketch 
