@@ -127,7 +127,7 @@ if __name__=='__main__':
 
 
         for e in xrange(epochs):
-            print "epoch ", e, "Learning rate C:", C/(e+1), "Learning rate a:", alpha/(e+1)
+            print "epoch ", e, "Learning rate C:", C/(e+1), "Learning rate bias:", alpha/(e+1), "Learning rate variance:", np.sqrt(alpha)/(e+1)
 
             #todo shuffle train indices
             shuffle(train_indices)
@@ -196,7 +196,7 @@ if __name__=='__main__':
                   #test update biases
                   #print "ratio",ratio
                   for _ in xrange(ratio):
-                    transformer.updatevariance((WCMS * target), alpha/(e+1))
+                    transformer.updatevariance((WCMS * target), np.sqrt(alpha)/(e+1))
 
                     transformer.updatebias(( WCMS*target)  ,alpha/(e+1))
 
