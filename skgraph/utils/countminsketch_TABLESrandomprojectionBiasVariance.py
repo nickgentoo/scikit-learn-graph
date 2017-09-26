@@ -157,7 +157,7 @@ class CountMinSketch(object):
 
         #data_nobias=list(itertools.chain.from_iterable([self.x[i,:self.m] for i in indices]))
         #print data_nobias
-        data=np.tile(norm*self.mus.ravel(),len(indices))
+        #data=np.tile(norm*self.mus.ravel(),len(indices))
         #data=list(itertools.chain.from_iterable([numpy.multiply(norm, self.mus).ravel()]*len(indices)))
         #print data
         row=np.tile(range(self.m),len(indices))
@@ -240,9 +240,9 @@ class CountMinSketch(object):
         #print "derivative", derivative.shape
         #print "mus",self.mus.shape
 
-        self.mus=np.asarray(self.mus+ np.multiply(ywstep,derivative))
+        self.mus=np.clip(np.asarray(self.mus+ np.multiply(ywstep,derivative)),0,None)
         #print "mus", self.mus.shape
-        if self._j %100==0:
+        if self._j %5000==0:
             print "mus (min,max)", min(self.mus), max(self.mus)
             self._j=0
         #print self.mus.shape
@@ -265,9 +265,9 @@ class CountMinSketch(object):
         #print "mus",self.mus.shape
         #print "sigma old", self.sigma
         #print np.multiply(ywstep,derivative)
-        self.sigma=np.asarray(self.sigma+ np.multiply(ywstep,derivative))
+        self.sigma=np.clip(np.asarray(self.sigma+ np.multiply(ywstep,derivative)),0,None)
         #print "sigma new", self.sigma
-        if self._i %100==0:
+        if self._i %5000==0:
             print "sigma (min,max)", min(self.sigma), max(self.sigma)
             self._i=0
         #print self.mus.shape
