@@ -65,7 +65,7 @@ if __name__=='__main__':
     normalization=False
     #working with Chemical
     g_it=load_graph_datasets.dispatch(dataset)
-    epochs=2
+    epochs=20
 
     f=open(name,'w')
 
