@@ -239,8 +239,9 @@ class CountMinSketch(object):
         #print "YWSTEP",ywstep.shape
         #print "derivative", derivative.shape
         #print "mus",self.mus.shape
+        self.mus=np.asarray(self.mus+ np.multiply(ywstep,derivative))
 
-        self.mus=np.clip(np.asarray(self.mus+ np.multiply(ywstep,derivative)),0,None)
+        #self.mus=np.clip(np.asarray(self.mus+ np.multiply(ywstep,derivative)),0,None)
         #print "mus", self.mus.shape
         if self._j %5000==0:
             print "mus (min,max)", min(self.mus), max(self.mus)

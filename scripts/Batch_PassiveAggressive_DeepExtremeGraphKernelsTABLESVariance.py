@@ -127,7 +127,7 @@ if __name__=='__main__':
 
 
         for e in xrange(epochs):
-            print "epoch ", e, "Learning rate C:", C/(e+1), "Learning rate bias:", alpha/(e+1), "Learning rate variance:", np.sqrt(alpha)/(e+1)
+            print "epoch ", e, "Learning rate C:", C/(e+1), "Learning rate bias:",alpha/(e+1), "Learning rate variance:", np.sqrt(alpha)/(e+1)
 
             #todo shuffle train indices
             shuffle(train_indices)
