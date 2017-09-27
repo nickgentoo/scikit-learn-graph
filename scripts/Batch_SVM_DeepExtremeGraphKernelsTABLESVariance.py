@@ -42,6 +42,7 @@ from scipy.sparse import csr_matrix
 from skgraph.utils.countminsketch_TABLESrandomprojectionBiasVariance import CountMinSketch
 from itertools import izip
 from sklearn.metrics import accuracy_score
+from sklearn.svm import LinearSVC
 import time
 if __name__=='__main__':
     start_time = time.time()
@@ -96,7 +97,7 @@ if __name__=='__main__':
     from sklearn.model_selection import KFold, cross_val_score
     Xind=xrange(features.shape[0])
     random.seed(42)
-    k_fold = KFold(n_splits=3, random_state=rs)
+    k_fold = KFold(n_splits=3)
     bestaccsval=[0.0]*3
     bestaccstest=[0.0]*3
 
@@ -133,8 +134,23 @@ if __name__=='__main__':
         part_minus=0
         sizes=[5000]*50
         transformer=CountMinSketch(m,features.shape[1],rs)
-        WCMS=np.zeros(shape=(m,1))
+        #WCMS=np.zeros(shape=(m,1))
         cms_creation=0.0
+        clf = LinearSVC(random_state=0)
+
+        #compute the first W
+        transformedExamples=[]
+        for i in train_indices:
+            ex=features[i][0].T
+            #print ex
+
+            exCMS=transformer.transform(ex)
+            transformedExamples.append(np.squeeze(np.asarray(exCMS)))
+        #print np.asarray(transformedExamples).shape
+        clf.fit(transformedExamples, g_it.target[train_indices])
+        #print "W", type(clf.coef_), clf.coef_
+        WCMS=clf.coef_
+        #Now WCMS is fixed, let's learn the representation!
 
 
         for e in xrange(epochs):
@@ -160,95 +176,40 @@ if __name__=='__main__':
               #module=np.dot(exCMS.T,exCMS)[0,0]
               #print "module", module
 
-              time2=time.time()
-              cms_creation+=time2 - time1
-              dot=np.dot(WCMS.T,exCMS)[0,0]
-              #print "dot", dot.shape, dot
-              #print "dot:", dot, "dotCMS:",dot1
-              if (np.sign(dot) != target ):
-                 #print "error on example",i, "predicted:", dot, "correct:", target
-                 errors+=1
-                 if target==1:
-                         fn+=1
-                 else:
-                         fp+=1
-              else:
-                 #print "correct classification", target
-                 if target==1:
-                        tp+=1
-                 else:
-                         tn+=1
-              if(target==1):
-                  coef=(part_minus+1.0)/(part_plus+part_minus+1.0)
-                  part_plus+=1
-                  ratio=float(part_minus)/part_plus
-                  ratio=max(1,int(ratio))
-                  #print " + ratio", ratio
-
-              else:
-                  assert(target !=0)
-                  coef=(part_plus+1.0)/(part_plus+part_minus+1.0)
-                  part_minus+=1
-                  ratio=float(part_plus)/part_minus
-                  ratio=max(1,int(ratio))
-                  #print " - ratio", ratio
+              dot=np.dot(WCMS,exCMS)[0,0]
+              #print "dot", dot
 
 
-
-              tao = min (C/(e+1), max (0.0,( (1.0 - target*dot )*coef) / module ) );
+              tao = min (C/(e+1), max (0.0,( (1.0 - target*dot )) / module ) );
 
               if (tao > 0.0):
-                  #print "ratio", min(1,int(ratio))
-                  #WCMS_notao= exCMS*target
-                  WCMS+=(exCMS*(tao*target))
-                  #print "W", WCMS.shape
-                  #print "Wtarget", (WCMS*target).shape
-                  #print "derivative", derivative.shape
+                    transformer.updatevariance((WCMS.T * target), alpha/(e+1))
 
-                  #test update biases
-                  #print "ratio",ratio
-                  for _ in xrange(ratio):
-                    transformer.updatevariance((WCMS * target), np.sqrt(alpha)/(e+1))
+                    transformer.updatebias(( WCMS.T*target)  ,alpha/(e+1))
 
-                    transformer.updatebias(( WCMS*target)  ,alpha/(e+1))
+            #re-transform all examples, re-run SVM and classify validation and test
+            #TODO
+            transformedExamples = []
+            for i in train_indices:
+                ex = features[i][0].T
+                # print ex
 
-              #              for row,col in zip(rows,cols):
-    #                   ((row,col), ex[row,col])
-    #                   #print col, ex[row,col]
-    #                   WCMS.add(col,target*tao*ex[row,col])
+                exCMS = transformer.transform(ex)
+                transformedExamples.append(np.squeeze(np.asarray(exCMS)))
+            # print np.asarray(transformedExamples).shape
+            clf.fit(transformedExamples, g_it.target[train_indices])
+            # print "W", type(clf.coef_), clf.coef_
+            WCMS = clf.coef_
 
-                     #print "Correct prediction example",i, "pred", score, "target",target
+            #------------
 
-
-              if i%50==0 and i!=0:
-                     #output performance statistics every 50 examples
-                    if (tn+fp) > 0:
-                         pos_part= float(fp) / (tn+fp)
-                    else:
-                         pos_part=0
-                    if (tp+fn) > 0:
-                         neg_part=float(fn) / (tp+fn)
-                    else:
-                         neg_part=0
-                    BER = 0.5 * ( pos_part  + neg_part)
-                    #print "1-BER Window esempio ",i, (1.0 - BER)
-                    print ".",
-                    f.write("1-BER Window esempio "+str(i)+" "+str(1.0 - BER)+"\n")
-                    #print>>f,"1-BER Window esempio "+str(i)+" "+str(1.0 - BER)
-                    BERtotal.append(1.0 - BER)
-                    tp = 0
-                    fp = 0
-                    fn = 0
-                    tn = 0
-                    part_plus=0
-                    part_minus=0
             print "classify Validation set"
             predictionsval=[]
             for i in val_indices:
                 ex = features[i][0].T
 
                 exCMS = transformer.transform(ex)
-                dot = np.dot(WCMS.T, exCMS)[0, 0]
+                dot = np.dot(WCMS, exCMS)[0, 0]
                 pred=np.sign(dot)
                 predictionsval.append(pred)
             #print "predictions"
@@ -262,7 +223,7 @@ if __name__=='__main__':
                 ex = features[i][0].T
 
                 exCMS = transformer.transform(ex)
-                dot = np.dot(WCMS.T, exCMS)[0, 0]
+                dot = np.dot(WCMS, exCMS)[0, 0]
                 pred=np.sign(dot)
                 predictionstest.append(pred)
             #print "predictions"
