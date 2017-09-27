@@ -28,7 +28,7 @@ import os,sys,inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 import sys
 from skgraph.feature_extraction.graph.ODDSTVectorizer import ODDSTVectorizer
 from skgraph.feature_extraction.graph.WLVectorizer import WLVectorizer

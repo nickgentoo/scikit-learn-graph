@@ -34,6 +34,7 @@ from scipy.sparse import csr_matrix, linalg
 #from joblib import Parallel, delayed
 #import multiprocessing
 import scipy
+from datetime import datetime
 import tables as tb
 def processInput(i, m, rs):
     numpy.random.seed(i + (rs * 10000))
@@ -101,6 +102,7 @@ class CountMinSketch(object):
 #            self.tables.append(table)
         #inizialize projection matrix
         import random as rnd
+        rnd.seed(datetime.now())
 
         #numpy.random.seed(self.rs * 10000)
         filename=''.join(rnd.choice(string.ascii_uppercase + string.digits) for _ in range(16))
