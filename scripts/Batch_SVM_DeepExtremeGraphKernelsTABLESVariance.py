@@ -136,7 +136,7 @@ if __name__=='__main__':
         transformer=CountMinSketch(m,features.shape[1],rs)
         #WCMS=np.zeros(shape=(m,1))
         cms_creation=0.0
-        clf = LinearSVC(random_state=0)
+        clf = LinearSVC(random_state=0,C=C)
 
         #compute the first W
         transformedExamples=[]
@@ -197,6 +197,8 @@ if __name__=='__main__':
                 exCMS = transformer.transform(ex)
                 transformedExamples.append(np.squeeze(np.asarray(exCMS)))
             # print np.asarray(transformedExamples).shape
+            clf = LinearSVC(random_state=0, C=C)
+
             clf.fit(transformedExamples, g_it.target[train_indices])
             # print "W", type(clf.coef_), clf.coef_
             WCMS = clf.coef_
