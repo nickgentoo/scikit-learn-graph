@@ -100,7 +100,10 @@ if __name__=='__main__':
     k_fold = KFold(n_splits=3, random_state=rs)
     bestaccsval=[0.0]*3
     bestaccstest=[0.0]*3
-
+    bestaccsval_original=[0.0]*3
+    bestaccstest_original=[0.0]*3
+    bestaccsval_ELM=[0.0]*3
+    bestaccstest_ELM=[0.0]*3
     fold_index=-1
     for train_val_indices, test_indices in k_fold.split(Xind):
         train_indices, val_indices = train_test_split(train_val_indices, test_size=.20, random_state=0)
@@ -136,7 +139,30 @@ if __name__=='__main__':
         transformer=CountMinSketch(m,features.shape[1],rs)
         #WCMS=np.zeros(shape=(m,1))
         cms_creation=0.0
-        clf = LinearSVC(random_state=42,C=C, dual=True,max_iter=3000,verbose=2)
+        #training linear SVM. Validating the C parameter
+        from sklearn.model_selection import PredefinedSplit
+        #print "len", len(train_val_indices)
+        test_fold=[0]*features.shape[0]
+        C_values=[0.0001,0.001,0.01,0.1,1,10]
+        ps = PredefinedSplit(test_fold)
+        train_original=features[train_indices]
+        validation_original=features[val_indices]
+        test_original=features[test_indices]
+
+        for c_ in C_values:
+            clf = LinearSVC(random_state=42, C=c_, dual=True, max_iter=3000)
+            clf.fit(train_original, g_it.target[train_indices])
+            predictionsval=clf.predict(validation_original)
+            predictionstest=clf.predict(test_original)
+
+            accval_original = accuracy_score(predictionsval, g_it.target[val_indices])
+            acctest_original = accuracy_score(predictionstest, g_it.target[test_indices])
+
+            if accval_original > bestaccsval_original[fold_index]:
+                bestaccsval_original[fold_index] = accval_original
+                bestaccstest_original[fold_index] = acctest_original
+        print "Original FS Validation set Accuracy:", bestaccsval_original[fold_index]
+        print "Original FS Test set Accuracy:", bestaccstest_original[fold_index]
 
         #compute the first W
         transformedExamples=[]
@@ -150,6 +176,7 @@ if __name__=='__main__':
         #print np.asarray(transformedExamples).shape
         #test=np.array(transformedExamples)
         print "transformedExamples"#, test.shape
+        clf = LinearSVC(random_state=42,C=C, dual=True,max_iter=3000,verbose=2)
 
         clf.fit(transformedExamples, g_it.target[train_indices])
         print "trained svm"
@@ -184,6 +211,11 @@ if __name__=='__main__':
         # todo test on validation set until convergence, than on test set
         acctest = accuracy_score(predictionstest, g_it.target[test_indices])
         print "Test set Accuracy:", acctest
+
+        if accval > bestaccsval_ELM[fold_index]:
+            bestaccsval_ELM[fold_index] = accval
+            bestaccstest_ELM[fold_index] = acctest
+
         if accval > bestaccsval[fold_index]:
             bestaccsval[fold_index] = accval
             bestaccstest[fold_index] = acctest
@@ -281,6 +313,9 @@ end_time=time.time()
 print("Learning phase time %s seconds ---" % (end_time - features_time )) #- cms_creation
 print("Total time %s seconds ---" % (end_time - start_time))
 print "DEBUG: AVG Accuracy Validation set", str(np.average(bestaccsval)),"std", np.std(bestaccsval)
+
+print "Original FS AVG Accuracy Test set", str(np.average(bestaccstest_original)),"std", np.std(bestaccstest_original)
+print "ELM AVG Accuracy Test set", str(np.average(bestaccstest_ELM)),"std", np.std(bestaccstest_ELM)
 
 print "AVG Accuracy Test set", str(np.average(bestaccstest)),"std", np.std(bestaccstest)
 #f.write("BER AVG "+ str(np.average(BERtotal))+" std "+str(np.std(BERtotal))+"\n")
