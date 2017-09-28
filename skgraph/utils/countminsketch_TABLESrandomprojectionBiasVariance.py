@@ -89,8 +89,8 @@ class CountMinSketch(object):
         self.m=m
         self.samplesize=samplesize
         self.rs=rs
-        self.mus=numpy.asarray([0.0] *m).reshape(self.m,1)
-        self.sigma = numpy.asarray([1.0] * self.m).reshape(self.m, 1)
+        self.mus=numpy.array([0.0] *m).reshape(self.m,1)
+        self.sigma = numpy.array([1.0] * self.m).reshape(self.m, 1)
         #print "sigma", self.sigma.shape
         self._i=0
         self._j=0
@@ -187,15 +187,20 @@ class CountMinSketch(object):
         #     data_nobias.extend(v.ravel())
             #print data
         tables_nobias=csr_matrix ((data_nobias,(row,col)), shape=(self.m,self.samplesize))
-        tables_nobias=scipy.sparse.csr_matrix.multiply(tables_nobias,sqrt(self.m))
-        self.Rphix= (np.multiply(tables_nobias,vector)).todense()
-        #print "sigma", self.sigma.shape, self.sigma
-        diagon= np.diag(self.sigma.flatten())
-        #print "diagon",diagon.shape, type(diagon), diagon
+        #TEST tables_nobias=scipy.sparse.csr_matrix.multiply(tables_nobias,sqrt(self.m))
+        Rphix= (np.multiply(tables_nobias,vector)) #TEST#.todense()
+        self.Rphix = Rphix.todense()
+        #print "Rphix", self.Rphix.shape, self.Rphix
+        #diagon= np.diag(self.sigma.flatten())
+        diagon=scipy.sparse.diags(self.sigma.flatten(),0)
+
+        #print "diagon",diagon.shape, diagon
         #print "tables_nobias", tables_nobias.shape, self.sigma.shape
+        #print "sigma", self.sigma.shape, self.sigma
         #tables_nobias=diagon*tables_nobias #scipy.sparse.csr_matrix.multiply(tables_nobias,self.sigma)
-        self.sigmaRphix= diagon*self.Rphix
-        #print "sigmaRphix", self.sigmaRphix.shape
+        self.sigmaRphix = (diagon*Rphix).todense()
+        #self.sigmaRphix= diagon.multiply(self.Rphix)
+        #print "sigmaRphix", self.sigmaRphix.shape, self.sigmaRphix
         #self.sigmaRphix[0]
         #print tables_nobias.shape
         #print data_nobias.shape
@@ -266,10 +271,10 @@ class CountMinSketch(object):
         ywstep=np.asarray(np.multiply(yw,step))
         #print "---UPDATE BIAS-----"
         #print "YWSTEP",ywstep
-        #print "derivative", derivative
+        #print "derivative", type(derivative), derivative
         #print "mus",self.mus.shape
-        #print "sigma old", self.sigma
-        #print np.multiply(ywstep,derivative)
+        #print "sigma old", type( self.sigma), self.sigma
+        #print "ywstep*derivative", type(np.multiply(ywstep,derivative))
         self.sigma=np.clip(np.asarray(self.sigma+ np.multiply(ywstep,derivative)),0,None)
         #print "sigma new", self.sigma
         if self._i %5000==0:

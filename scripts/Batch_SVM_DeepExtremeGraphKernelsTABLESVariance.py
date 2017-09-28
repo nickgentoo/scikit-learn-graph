@@ -97,7 +97,7 @@ if __name__=='__main__':
     from sklearn.model_selection import KFold, cross_val_score
     Xind=xrange(features.shape[0])
     random.seed(42)
-    k_fold = KFold(n_splits=3)
+    k_fold = KFold(n_splits=3, random_state=rs)
     bestaccsval=[0.0]*3
     bestaccstest=[0.0]*3
 
@@ -136,7 +136,7 @@ if __name__=='__main__':
         transformer=CountMinSketch(m,features.shape[1],rs)
         #WCMS=np.zeros(shape=(m,1))
         cms_creation=0.0
-        clf = LinearSVC(random_state=0,C=C)
+        clf = LinearSVC(random_state=42,C=C, dual=True,verbose=2)
 
         #compute the first W
         transformedExamples=[]
@@ -145,11 +145,49 @@ if __name__=='__main__':
             #print ex
 
             exCMS=transformer.transform(ex)
+            #print "exCMS", exCMS.shape
             transformedExamples.append(np.squeeze(np.asarray(exCMS)))
         #print np.asarray(transformedExamples).shape
+        #test=np.array(transformedExamples)
+        print "transformedExamples"#, test.shape
+
         clf.fit(transformedExamples, g_it.target[train_indices])
+        print "trained svm"
+
         #print "W", type(clf.coef_), clf.coef_
         WCMS=clf.coef_
+
+        print "classify Validation set"
+        predictionsval = []
+        for i in val_indices:
+            ex = features[i][0].T
+
+            exCMS = transformer.transform(ex)
+            dot = np.dot(WCMS, exCMS)[0, 0]
+            pred = np.sign(dot)
+            predictionsval.append(pred)
+        # print "predictions"
+        # todo test on validation set until convergence, than on test set
+        accval = accuracy_score(predictionsval, g_it.target[val_indices])
+        print "Validation set Accuracy:", accval
+
+        # print "classify Test set"
+        predictionstest = []
+        for i in test_indices:
+            ex = features[i][0].T
+
+            exCMS = transformer.transform(ex)
+            dot = np.dot(WCMS, exCMS)[0, 0]
+            pred = np.sign(dot)
+            predictionstest.append(pred)
+        # print "predictions"
+        # todo test on validation set until convergence, than on test set
+        acctest = accuracy_score(predictionstest, g_it.target[test_indices])
+        print "Test set Accuracy:", acctest
+        if accval > bestaccsval[fold_index]:
+            bestaccsval[fold_index] = accval
+            bestaccstest[fold_index] = acctest
+
         #Now WCMS is fixed, let's learn the representation!
 
 
@@ -180,7 +218,7 @@ if __name__=='__main__':
               #print "dot", dot
 
 
-              tao = min (C/(e+1), max (0.0,( (1.0 - target*dot )) / module ) );
+              tao = min (C, max (0.0,( (1.0 - target*dot )) / module ) );
 
               if (tao > 0.0):
                     transformer.updatevariance((WCMS.T * target), alpha/(e+1))
@@ -197,6 +235,7 @@ if __name__=='__main__':
                 exCMS = transformer.transform(ex)
                 transformedExamples.append(np.squeeze(np.asarray(exCMS)))
             # print np.asarray(transformedExamples).shape
+            print "transformedTrainingExamples"#, test.shape
             clf = LinearSVC(random_state=0, C=C)
 
             clf.fit(transformedExamples, g_it.target[train_indices])
