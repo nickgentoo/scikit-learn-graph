@@ -236,7 +236,7 @@ if __name__=='__main__':
                 transformedExamples.append(np.squeeze(np.asarray(exCMS)))
             # print np.asarray(transformedExamples).shape
             print "transformedTrainingExamples"#, test.shape
-            clf = LinearSVC(random_state=0, C=C)
+            clf = LinearSVC(random_state=42, C=C, dual=True, verbose=2)
 
             clf.fit(transformedExamples, g_it.target[train_indices])
             # print "W", type(clf.coef_), clf.coef_
