@@ -285,8 +285,4 @@ class CountMinSketch(object):
         self.sigma=self.newsigma
         self.mus=self.newmus
 
-    def removetmp(self):
-        self.h5file.close()
-        os.remove(self.filename)
-        print "removed temporary file"
 

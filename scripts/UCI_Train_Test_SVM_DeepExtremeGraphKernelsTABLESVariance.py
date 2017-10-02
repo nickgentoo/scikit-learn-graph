@@ -65,7 +65,7 @@ if __name__=='__main__':
     #working with Chemical
     data=load_UCI_datasets.dispatch(dataset)
 
-    epochs=20
+    epochs=1 #20
 
 
     from random import shuffle
@@ -339,7 +339,6 @@ if __name__=='__main__':
                 bestaccsval[fold_index]=accval
                 bestaccstest[fold_index]=acctest
 
-        transformer.removetmp()
 
 end_time=time.time()
 print("Total time %s seconds ---" % (end_time - start_time))
