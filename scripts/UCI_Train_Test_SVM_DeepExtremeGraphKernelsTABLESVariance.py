@@ -39,11 +39,13 @@ import numpy as np
 from scipy.sparse import csc_matrix
 from sklearn.utils import compute_class_weight
 from scipy.sparse import csr_matrix
-from skgraph.utils.countminsketch_TABLESrandomprojectionBiasVariance import CountMinSketch
+from skgraph.utils.countminsketch_InMemoryrandomprojectionBiasVariance import CountMinSketch
 from itertools import izip
 from sklearn.metrics import accuracy_score
 from sklearn.svm import LinearSVC
 import time
+from sklearn.linear_model import Ridge
+
 if __name__=='__main__':
     start_time = time.time()
 
@@ -128,10 +130,11 @@ if __name__=='__main__':
         #test_original=data.test.reshape((data.test.shape[0],data.training.shape[1]))
         bestc=0
         for c_ in C_values:
-            clf = LinearSVC(random_state=42, C=c_, dual=True, max_iter=3000)
+            clf = Ridge(alpha=c_ ** -1, random_state=42)
+            #clf = LinearSVC(random_state=42, C=c_, dual=True, max_iter=3000)
             clf.fit(train_original, data.training_target[train_indices])
-            predictionsval=clf.predict(validation_original)
-            predictionstest=clf.predict(test_original)
+            predictionsval=np.sign(clf.predict(validation_original))
+            predictionstest=np.sign(clf.predict(test_original))
 
             accval_original = accuracy_score(predictionsval, data.training_target[val_indices])
             acctest_original = accuracy_score(predictionstest, data.test_target)
@@ -156,41 +159,52 @@ if __name__=='__main__':
         #print np.asarray(transformedExamples).shape
         #test=np.array(transformedExamples)
         print "transformedExamples"#, test.shape
-        clf = LinearSVC(random_state=42,C=C, dual=True,max_iter=3000,verbose=2)
+        #clf = LinearSVC(random_state=42,C=C, dual=True,max_iter=3000,verbose=2)
+        print "C", C
+        clf = Ridge(alpha=C**-1, random_state=42)
 
         clf.fit(transformedExamples, data.training_target[train_indices])
-        print "trained svm"
+        print "trained Ridge"
 
         #print "W", type(clf.coef_), clf.coef_
-        WCMS=clf.coef_
+        WCMS = clf.coef_.reshape((1, m))
 
         print "classify Validation set"
-        predictionsval = []
+        #predictionsval = []
+        examplesval=[]
         for i in val_indices:
             ex=data.training.tocsr()[i,:].T
 
             exCMS = transformer.transform(ex)
+            examplesval.append(np.squeeze(np.asarray(exCMS)))
+
             dot = np.dot(WCMS, exCMS)[0, 0]
             pred = np.sign(dot)
-            predictionsval.append(pred)
+            #predictionsval.append(pred)
         # print "predictions"
         # todo test on validation set until convergence, than on test set
+        predictionsval = np.sign(clf.predict(examplesval))
         accval = accuracy_score(predictionsval, data.training_target[val_indices])
-        print "Validation set Accuracy:", accval
+        print "ELM Validation set Accuracy:", accval
 
         # print "classify Test set"
-        predictionstest = []
+        #predictionstest = []
+        examplestest=[]
         for i in xrange(data.test.shape[0]):
             ex = test_original.tocsr()[i, :].T
 
             exCMS = transformer.transform(ex)
+            examplestest.append(np.squeeze(np.asarray(exCMS)))
+
             dot = np.dot(WCMS, exCMS)[0, 0]
             pred = np.sign(dot)
-            predictionstest.append(pred)
+            #predictionstest.append(pred)
         # print "predictions"
+        predictionstest = np.sign(clf.predict(examplestest))
+
         # todo test on validation set until convergence, than on test set
         acctest = accuracy_score(predictionstest, data.test_target)
-        print "Test set Accuracy:", acctest
+        print "ELM Test set Accuracy:", acctest
 
         if accval > bestaccsval_ELM[fold_index]:
             bestaccsval_ELM[fold_index] = accval
@@ -200,11 +214,35 @@ if __name__=='__main__':
             bestaccsval[fold_index] = accval
             bestaccstest[fold_index] = acctest
 
+        #Original ELM code
+        elm_val=0.0
+        elm_test=0.0
+        bestcelm=0.0
+        for c_ in C_values:
+
+            alp = c_ ** -1
+
+            clfr = Ridge(alpha=alp, random_state=42)
+            clfr.fit(transformedExamples, data.training_target[train_indices])
+            accval_ridge = accuracy_score(np.sign(clfr.predict(examplesval)), data.training_target[val_indices])
+
+            acctest_ridge = accuracy_score(np.sign(clfr.predict(examplestest)), data.test_target)
+            if accval_ridge > elm_val:
+                elm_val= accval_ridge
+                elm_test = acctest_ridge
+                bestcelm = c_
+                #WCMS = clfr.coef_.reshape((1, m))
+        C=bestcelm
+        print "ELM Validation set Accuracy Ridge:", elm_val
+        print "ELM Test set Accuracy Ridge:", elm_test
+        print "best c", bestcelm
+
+
         #Now WCMS is fixed, let's learn the representation!
 
 
         for e in xrange(epochs):
-            print "epoch ", e, "Learning rate C:", C/(e+1), "Learning rate bias:",alpha/(e+1), "Learning rate variance:", np.sqrt(alpha)/(e+1)
+            print "epoch ", e, "Learning rate C:", C, "Learning rate bias:",alpha #/(e+1)#, "Learning rate variance:", np.sqrt(alpha)/(e+1)
 
             #todo shuffle train indices
             random.seed(e)
@@ -230,12 +268,16 @@ if __name__=='__main__':
               #print "dot", dot
 
 
-              tao = min (C, max (0.0,( (1.0 - target*dot )) / module ) );
+              #tao = min (C, max (0.0,( (1.0 - target*dot )) / module ) );
+              tao=target-dot
+              if True: #(tao > 0.0):
+                    #transformer.updatevariance((WCMS.T * target), alpha/(e+1))
+                    transformer.updatevariance((WCMS.T * tao), alpha) # TEST /(e+1))
 
-              if (tao > 0.0):
-                    transformer.updatevariance((WCMS.T * target), alpha/(e+1))
+                    #transformer.updatebias(( WCMS.T*target)  ,alpha/(e+1))
 
-                    transformer.updatebias(( WCMS.T*target)  ,alpha/(e+1))
+                    transformer.updatebias(( WCMS.T*tao)  ,alpha) # TEST/(e+1))
+                    transformer.finalizeupdates()
 
             #re-transform all examples, re-run SVM and classify validation and test
             #TODO
@@ -248,38 +290,48 @@ if __name__=='__main__':
                 transformedExamples.append(np.squeeze(np.asarray(exCMS)))
             # print np.asarray(transformedExamples).shape
             print "transformedTrainingExamples"#, test.shape
-            clf = LinearSVC(random_state=42, C=C, dual=True,max_iter=3000, verbose=2)
+            #clf = LinearSVC(random_state=42, C=C, dual=True,max_iter=3000, verbose=2)
+            print "C", C
+            clf = Ridge(alpha=C ** -1, random_state=42)
 
             clf.fit(transformedExamples, data.training_target[train_indices])
             # print "W", type(clf.coef_), clf.coef_
-            WCMS = clf.coef_
+            WCMS = clf.coef_.reshape((1, m))
 
             #------------
 
             print "classify Validation set"
-            predictionsval=[]
+            examplesval=[]
             for i in val_indices:
                 ex = data.training.tocsr()[i, :].T
 
                 exCMS = transformer.transform(ex)
-                dot = np.dot(WCMS, exCMS)[0, 0]
-                pred=np.sign(dot)
-                predictionsval.append(pred)
+                examplesval.append(np.squeeze(np.asarray(exCMS)))
+
+                #dot = np.dot(WCMS, exCMS)[0, 0]
+                #pred=np.sign(dot)
+                #predictionsval.append(pred)
             #print "predictions"
+            predictionsval = np.sign(clf.predict(examplesval))
+
             #todo test on validation set until convergence, than on test set
             accval= accuracy_score(predictionsval, data.training_target[val_indices])
             print "Validation set Accuracy:", accval
 
             #print "classify Test set"
-            predictionstest=[]
+            examplestest=[]
             for i in xrange(data.test.shape[0]):
                 ex = test_original.tocsr()[i, :].T
 
                 exCMS = transformer.transform(ex)
-                dot = np.dot(WCMS, exCMS)[0, 0]
-                pred=np.sign(dot)
-                predictionstest.append(pred)
+                examplestest.append(np.squeeze(np.asarray(exCMS)))
+
+                #dot = np.dot(WCMS, exCMS)[0, 0]
+                #pred=np.sign(dot)
+                #predictionstest.append(pred)
             #print "predictions"
+            predictionstest = np.sign(clf.predict(examplestest))
+
             #todo test on validation set until convergence, than on test set
             acctest= accuracy_score(predictionstest, data.test_target)
             print "Test set Accuracy:", acctest
