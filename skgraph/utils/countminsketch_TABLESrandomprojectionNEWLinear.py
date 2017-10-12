@@ -178,24 +178,24 @@ class CountMinSketch(object):
         #vbias.extend(numpy.multiply(norm,self.mu))
         toadd=csr_matrix ((data,(row,col)), shape=(self.m,self.samplesize))
         tables=tables_nobias+ toadd #csr_matrix ((data,(row,col)), shape=(self.m,self.samplesize))
-        transformation= numpy.tanh(np.multiply(tables,vector)).todense()
+        transformation= np.multiply(tables,vector).todense()
         #print transformation.shape
         #assert(parrow==row)
         #assert(parcol==col)
         #assert(pardata==data)
         #TODO return vector in which i-th (1-tanh(R_i\phi(g) +norm*\mu_i)^2 * norm)
         #then just multiply each entry by y w_i to get the gradient
-        self.norm=norm
-        val2= self.norm*self.mus
+        #self.norm=norm
+        #val2= self.norm*self.mus
         #print "val2", val2.shape
         #print "tablesnobias", tables_nobias.shape
         #print "vector", vector.shape
-        self.Rphix= (np.multiply(tables_nobias,vector)).todense()
-        val3=self.Rphix+val2
+        #self.Rphix= (np.multiply(tables_nobias,vector)).todense()
+        #val3=self.Rphix+val2
         #print "val3",val3.shape
-        ones = np.ones(self.m).reshape(self.m,1)
+        #ones = np.ones(self.m).reshape(self.m,1)
         #print "ones", ones.shape
-        derivative= np.multiply((ones-numpy.square(val3)),norm)
+        #derivative= np.multiply((ones-numpy.square(val3)),norm)
         #print derivative
 
         return transformation # Probably I'll need to return v (to compute the bs)
